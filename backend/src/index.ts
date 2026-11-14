@@ -55,9 +55,9 @@ app.use('/reference', apiReference({ theme: 'deepSpace', content: openapiSpec })
 
 app.use('/api', apiRoutes);
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server nyala di http://localhost:${PORT}`);
+app.listen(PORT, () => {  
+  console.log(`Server di http://localhost:${PORT}`);
   console.log(`Docs di http://localhost:${PORT}/reference`);
 });

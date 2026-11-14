@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import stationRoutes from './station.routes';
+import promoRoutes from './promo.routers';
 
 const router = Router();
 
@@ -6,17 +8,18 @@ const router = Router();
  * @openapi
  * /api/health:
  *   get:
- *     summary: Cek status server
+ *     summary: Cek status API
  *     tags: [Health]
  *     responses:
  *       200:
- *         description: Server berjalan
+ *         description: Server sehat
  */
-router.get('/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok' } });
+router.get('/health', (req, res) => {
+  res.json({ success: true, message: 'Backend berjalan!' });
 });
 
-// Daftarkan router fitur di sini, contoh:
-// router.use('/auth', authRoutes);
+// Mounting master data routes
+router.use('/stations', stationRoutes);
+router.use('/promos', promoRoutes);
 
 export default router;
