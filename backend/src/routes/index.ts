@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import stationRoutes from './station.routes';
 import promoRoutes from './promo.routers';
+import authRoutes from "./auth.routes";
 
 const router = Router();
 
@@ -21,5 +22,5 @@ router.get('/health', (req, res) => {
 // Mounting master data routes
 router.use('/stations', stationRoutes);
 router.use('/promos', promoRoutes);
-
+router.use('/auth', authRoutes);
 export default router;

@@ -42,8 +42,6 @@ export const loginAdmin = async (req: Request, res: Response): Promise<any> => {
       recordFailedLogin(ip);
       return res.status(401).json({ success: false, message: "Email atau password salah" });
     }
-    if (!user.isActive) return res.status(403).json({ success: false, message: "Akun nonaktif" });
-
     resetLoginAttempts(ip);
     const { accessToken, refreshToken } = generateTokens({ id: user.id, role: user.role });
     await prisma.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date() } });
