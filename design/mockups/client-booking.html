@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jadwal.an — Pilih Jadwal</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="c-nav">
+  <nav class="c-nav-inner">
+    <a href="client-home.html" class="logo"><span class="logo-mark"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></span>Jadwal<b>.</b>an</a>
+    <div class="c-links"><a href="client-home.html">Beranda</a><a href="client-booking.html" class="active">Booking</a><a href="client-home.html#promo">Promo</a><a href="client-my-bookings.html">Booking Saya</a></div>
+    <div class="row"><span class="avatar">RA</span><span style="font-weight:700">Raka</span></div>
+  </nav>
+</header>
+
+<main class="c-main col" style="gap:24px">
+  <div class="col" style="gap:6px">
+    <a href="client-home.html" class="row small" style="gap:6px;color:var(--muted);font-weight:600"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Kembali</a>
+    <h1 class="h1">Pilih jadwal main</h1>
+    <p class="muted">Jam buka 10:00–23:00 WIB · booking minimal 30 menit sebelum mulai · durasi 1–8 jam</p>
+  </div>
+
+  <div class="row-wrap" style="align-items:flex-start;gap:24px">
+    <!-- LEFT -->
+    <section class="col grow" style="flex:2 1 600px;gap:20px">
+      <!-- date strip -->
+      <div class="card card-pad col" style="gap:14px">
+        <div class="row between"><span class="h3">November 2026</span><div class="row" style="gap:6px"><button class="icon-btn" type="button" aria-label="Minggu sebelumnya"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><button class="icon-btn" type="button" aria-label="Minggu berikutnya"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div></div>
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px">
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Sab</span><span style="font-size:18px;font-weight:800">14</span><span class="xs" style="color:var(--success);font-weight:700">Hari ini</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer"><span class="xs" style="font-weight:600;opacity:.85">Min</span><span style="font-size:18px;font-weight:800">15</span><span class="xs" style="font-weight:700;opacity:.85">Promo</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Sen</span><span style="font-size:18px;font-weight:800">16</span><span class="xs muted">&nbsp;</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Sel</span><span style="font-size:18px;font-weight:800">17</span><span class="xs muted">&nbsp;</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Rab</span><span style="font-size:18px;font-weight:800">18</span><span class="xs muted">&nbsp;</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Kam</span><span style="font-size:18px;font-weight:800">19</span><span class="xs muted">&nbsp;</span></button>
+          <button type="button" class="col" style="gap:2px;align-items:center;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer"><span class="xs muted" style="font-weight:600">Jum</span><span style="font-size:18px;font-weight:800">20</span><span class="xs muted">&nbsp;</span></button>
+        </div>
+      </div>
+
+      <div class="row between">
+        <div class="tabs" role="tablist"><button class="tab" type="button">Semua</button><button class="tab active" type="button">PS5</button><button class="tab" type="button">PS4</button></div>
+        <div class="row small muted" style="gap:16px"><span class="row" style="gap:6px"><span class="dot" style="background:#fff;border:1px solid var(--border)"></span>Kosong</span><span class="row" style="gap:6px"><span class="dot" style="background:#C9CDD8"></span>Terisi</span><span class="row" style="gap:6px"><span class="dot" style="background:var(--primary)"></span>Pilihanmu</span></div>
+      </div>
+
+      <!-- station: selected -->
+      <article class="card card-pad col" style="gap:16px;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)">
+        <div class="row between">
+          <div class="row"><div class="stat-ic" style="background:var(--primary-soft);color:var(--primary)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></div><div class="col" style="gap:0"><span class="h3">PS5 - TV 1</span><span class="small muted">TV 50" 4K · maks 4 pemain · EA FC 25, Tekken 8, GTA V</span></div></div>
+          <span style="font-weight:800">Rp15.000<span class="small muted" style="font-weight:500">/jam</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px">
+          <span class="slot busy">10:00</span><span class="slot busy">11:00</span><span class="slot">12:00</span><span class="slot">13:00</span><span class="slot">14:00</span><span class="slot">15:00</span><span class="slot sel">16:00</span><span class="slot in-range">17:00</span><span class="slot busy">18:00</span><span class="slot busy">19:00</span><span class="slot">20:00</span><span class="slot">21:00</span><span class="slot">22:00</span>
+        </div>
+      </article>
+
+      <article class="card card-pad col" style="gap:16px">
+        <div class="row between">
+          <div class="row"><div class="stat-ic" style="background:var(--surface-muted);color:var(--text-2)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></div><div class="col" style="gap:0"><span class="h3">PS5 - TV 2</span><span class="small muted">TV 50" 4K · maks 4 pemain</span></div></div>
+          <span style="font-weight:800">Rp15.000<span class="small muted" style="font-weight:500">/jam</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px">
+          <span class="slot">10:00</span><span class="slot">11:00</span><span class="slot">12:00</span><span class="slot busy">13:00</span><span class="slot busy">14:00</span><span class="slot busy">15:00</span><span class="slot busy">16:00</span><span class="slot">17:00</span><span class="slot">18:00</span><span class="slot">19:00</span><span class="slot busy">20:00</span><span class="slot busy">21:00</span><span class="slot">22:00</span>
+        </div>
+      </article>
+
+      <article class="card card-pad col" style="gap:16px">
+        <div class="row between">
+          <div class="row"><div class="stat-ic" style="background:#0B0D17;color:#F5B83D"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></div><div class="col" style="gap:0"><span class="row" style="gap:8px"><span class="h3">PS5 - VIP Room</span><span class="badge b-vip no-dot">VIP</span></span><span class="small muted">Ruang privat ber-AC · TV 65" · maks 6 pemain</span></div></div>
+          <span style="font-weight:800">Rp25.000<span class="small muted" style="font-weight:500">/jam</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px">
+          <span class="slot busy">10:00</span><span class="slot busy">11:00</span><span class="slot busy">12:00</span><span class="slot busy">13:00</span><span class="slot">14:00</span><span class="slot">15:00</span><span class="slot">16:00</span><span class="slot">17:00</span><span class="slot busy">18:00</span><span class="slot busy">19:00</span><span class="slot busy">20:00</span><span class="slot">21:00</span><span class="slot">22:00</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- RIGHT: summary -->
+    <aside class="card col" style="flex:1 1 340px;max-width:400px;gap:0;overflow:hidden">
+      <div class="card-pad col" style="gap:4px;background:var(--ink);color:#fff">
+        <span class="overline" style="color:var(--ink-text)">Ringkasan booking</span>
+        <span style="font-size:20px;font-weight:800">PS5 - TV 1</span>
+        <span class="small" style="color:var(--ink-text)">Minggu, 15 Nov 2026 · 16:00–18:00 WIB</span>
+      </div>
+      <form class="card-pad col" style="gap:18px">
+        <div class="field">Durasi
+          <div class="row" style="gap:8px">
+            <button type="button" class="btn btn-outline btn-icon" aria-label="Kurangi durasi">−</button>
+            <span class="grow" style="height:40px;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">2 jam</span>
+            <button type="button" class="btn btn-outline btn-icon" aria-label="Tambah durasi">+</button>
+          </div>
+          <span class="hint">Maksimal 2 jam dari 16:00 (18:00 sudah terisi)</span>
+        </div>
+        <label class="field">Kode promo
+          <span class="row" style="gap:8px"><input class="input mono" value="WEEKEND20" style="font-weight:700"><button type="button" class="btn btn-outline">Pakai</button></span>
+          <span class="row xs" style="gap:6px;color:var(--success);font-weight:700"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Weekend Mabar — diskon 20% berhasil dipakai</span>
+        </label>
+        <div class="col" style="gap:8px;padding:14px;border-radius:12px;background:var(--surface-muted)">
+          <div class="row between small"><span class="muted">Rp15.000 × 2 jam</span><span style="font-weight:600">Rp30.000</span></div>
+          <div class="row between small"><span class="muted">Diskon WEEKEND20</span><span style="font-weight:600;color:var(--success)">−Rp6.000</span></div>
+          <hr class="divider">
+          <div class="row between"><span style="font-weight:700">Total</span><span style="font-size:22px;font-weight:800">Rp24.000</span></div>
+        </div>
+        <fieldset class="col" style="gap:8px;border:0;padding:0;margin:0">
+          <legend class="field" style="margin-bottom:8px">Metode bayar</legend>
+          <label class="row" style="padding:12px 14px;border-radius:12px;border:2px solid var(--primary);background:#F7F9FF;cursor:pointer"><input type="radio" name="pay" checked><span class="col grow" style="gap:0"><span style="font-weight:700">QRIS</span><span class="xs muted">Semua e-wallet &amp; m-banking · otomatis terkonfirmasi</span></span></label>
+          <label class="row" style="padding:12px 14px;border-radius:12px;border:1px solid var(--border);cursor:pointer"><input type="radio" name="pay"><span class="col grow" style="gap:0"><span style="font-weight:700">Bayar di kasir</span><span class="xs muted">Tunai saat datang</span></span></label>
+        </fieldset>
+        <label class="field">Catatan (opsional)<input class="input" placeholder="Mis. main ber-4, minta stik tambahan"></label>
+        <a href="client-payment.html" class="btn btn-primary btn-lg btn-block">Booking &amp; bayar Rp24.000</a>
+        <p class="xs muted" style="text-align:center">Booking QRIS menunggu pembayaran 30 menit, lalu batal otomatis jika belum dibayar.</p>
+      </form>
+    </aside>
+  </div>
+</main>
+
+<a href="client-chat.html" class="fab" aria-label="Buka chat Jadwal.an AI"><svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>Tanya AI</a>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Jadwal.an — Beranda</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0B0D17}
+*{box-sizing:border-box}
+a{color:#2F5BFF;text-decoration:none}a:hover{color:#1E45E6}
+</style>
+<div style="position: relative; min-height: 100vh; background: #F6F7F9; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #0B0D17; padding-bottom: 0">
+
+  <!-- NAVBAR -->
+  <header style="background: rgba(255,255,255,0.9); border-bottom: 1px solid #E6E8EC">
+    <nav style="max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+      <a href="client-home.html" style="display: flex; align-items: center; gap: 10px; color: #0B0D17">
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: #2F5BFF; color: #fff; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>
+        </span>
+        <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.5px">Jadwal<span style="color: #2F5BFF">.</span>an</span>
+      </a>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; font-size: 14px; font-weight: 600">
+        <a href="client-home.html" style="color: #0B0D17">Beranda</a>
+        <a href="#unit" style="color: #5B6070">Unit &amp; Harga</a>
+        <a href="#promo" style="color: #5B6070">Promo</a>
+        <a href="client-my-bookings.html" style="color: #5B6070">Booking Saya</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="client-auth.html" style="padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #0B0D17">Masuk</a>
+        <a href="client-booking.html" style="padding: 11px 18px; border-radius: 10px; background: #2F5BFF; color: #fff; font-size: 14px; font-weight: 700">Booking Sekarang</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 0">
+    <div style="background: #0B0D17; border-radius: 28px; padding: 56px 48px; display: flex; flex-wrap: wrap; gap: 40px; align-items: stretch; color: #fff; overflow: hidden">
+      <div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(47,91,255,0.18); color: #A9BCFF; font-size: 13px; font-weight: 600">
+          <span style="width: 8px; height: 8px; border-radius: 999px; background: #4ADE80"></span>
+          Buka hari ini · 10:00–23:00 WIB
+        </span>
+        <h1 style="margin: 0; font-size: 54px; line-height: 1.08; font-weight: 800; letter-spacing: -2px">Main PS tanpa antre. Amankan slotmu dari rumah.</h1>
+        <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #B4B8C8; max-width: 520px">Cek unit PS5 &amp; PS4 yang kosong secara real-time, pakai kode promo, lalu bayar pakai QRIS. Datang, langsung main.</p>
+
+        <form style="background: #fff; border-radius: 18px; padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; color: #0B0D17">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #5B6070">Tanggal
+            <input type="text" value="Sab, 15 Nov" style="height: 44px; border: 1px solid #E6E8EC; border-radius: 10px; padding: 0 12px; font: 600 14px 'Plus Jakarta Sans', sans-serif; color: #0B0D17">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #5B6070">Konsol
+            <select style="height: 44px; border: 1px solid #E6E8EC; border-radius: 10px; padding: 0 10px; font: 600 14px 'Plus Jakarta Sans', sans-serif; color: #0B0D17; background: #fff"><option>PS5</option><option>PS4</option><option>Semua</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #5B6070">Jam mulai
+            <select style="height: 44px; border: 1px solid #E6E8EC; border-radius: 10px; padding: 0 10px; font: 600 14px 'Plus Jakarta Sans', sans-serif; color: #0B0D17; background: #fff"><option>16:00</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #5B6070">Durasi
+            <select style="height: 44px; border: 1px solid #E6E8EC; border-radius: 10px; padding: 0 10px; font: 600 14px 'Plus Jakarta Sans', sans-serif; color: #0B0D17; background: #fff"><option>2 jam</option></select>
+          </label>
+          <a href="client-booking.html" style="align-self: end; height: 44px; border-radius: 10px; background: #2F5BFF; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            Cek slot
+          </a>
+        </form>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; color: #B4B8C8">
+          <span style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FA0FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>6 unit PS5 &amp; PS4</span>
+          <span style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FA0FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>Bayar QRIS</span>
+          <span style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4A6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4"/></svg>Booking lewat chat AI</span>
+        </div>
+      </div>
+
+      <!-- live availability card -->
+      <aside style="flex: 1 1 360px; min-width: 0; background: #151827; border: 1px solid #23273A; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: #8B90A6">SLOT KOSONG HARI INI</span>
+            <span style="font-size: 18px; font-weight: 700">Sabtu, 14 November</span>
+          </div>
+          <span style="padding: 4px 10px; border-radius: 999px; background: rgba(74,222,128,0.14); color: #4ADE80; font-size: 12px; font-weight: 700">Live</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; background: #1C2033">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 15px">PS5 - TV 1</span><span style="font-size: 13px; color: #8B90A6">Rp15.000/jam · 4 pemain</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end"><span style="padding: 4px 8px; border-radius: 8px; background: rgba(47,91,255,0.2); color: #A9BCFF; font-size: 12px; font-weight: 700">14:00–17:00</span><span style="padding: 4px 8px; border-radius: 8px; background: rgba(47,91,255,0.2); color: #A9BCFF; font-size: 12px; font-weight: 700">20:00–23:00</span></div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; background: #1C2033">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 15px">PS5 - VIP Room</span><span style="font-size: 13px; color: #8B90A6">Rp25.000/jam · 6 pemain</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end"><span style="padding: 4px 8px; border-radius: 8px; background: rgba(47,91,255,0.2); color: #A9BCFF; font-size: 12px; font-weight: 700">18:00–23:00</span></div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; background: #1C2033">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 15px">PS4 - TV 2</span><span style="font-size: 13px; color: #8B90A6">Rp8.000/jam · 2 pemain</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end"><span style="padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.08); color: #8B90A6; font-size: 12px; font-weight: 700">Penuh</span></div>
+          </div>
+        </div>
+        <a href="client-booking.html" style="display: flex; align-items: center; justify-content: center; gap: 6px; height: 44px; border-radius: 12px; border: 1px solid #2E3350; color: #fff; font-size: 14px; font-weight: 600">Lihat semua jadwal
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </aside>
+    </div>
+  </section>
+
+  <!-- UNIT & HARGA -->
+  <section id="unit" style="max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.4px; color: #2F5BFF">UNIT &amp; HARGA</span>
+        <h2 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -1px">Pilih unit sesuai gaya mainmu</h2>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <button type="button" style="padding: 9px 16px; border-radius: 999px; border: 0; background: #0B0D17; color: #fff; font: 700 13px 'Plus Jakarta Sans', sans-serif">Semua</button>
+        <button type="button" style="padding: 9px 16px; border-radius: 999px; border: 1px solid #E6E8EC; background: #fff; color: #0B0D17; font: 600 13px 'Plus Jakarta Sans', sans-serif">PS5</button>
+        <button type="button" style="padding: 9px 16px; border-radius: 999px; border: 1px solid #E6E8EC; background: #fff; color: #0B0D17; font: 600 13px 'Plus Jakarta Sans', sans-serif">PS4</button>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px">
+      <article style="background: #fff; border: 1px solid #E6E8EC; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column">
+        <div style="height: 168px; background: #E9EEFF; display: flex; align-items: center; justify-content: center; color: #2F5BFF; position: relative">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>
+          <span style="position: absolute; top: 14px; left: 14px; padding: 4px 10px; border-radius: 999px; background: #2F5BFF; color: #fff; font-size: 12px; font-weight: 700">PS5</span>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 18px; font-weight: 700">PS5 Reguler</h3><span style="font-size: 13px; color: #5B6070">TV 50" 4K · maks 4 pemain · 2 unit</span></div>
+            <div style="text-align: right"><span style="font-size: 20px; font-weight: 800">Rp15.000</span><span style="display: block; font-size: 12px; color: #5B6070">/jam</span></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">EA FC 25</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">Tekken 8</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">Spider-Man 2</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">+3 game</span>
+          </div>
+          <a href="client-booking.html" style="margin-top: auto; height: 44px; border-radius: 12px; background: #0B0D17; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">Lihat jadwal kosong</a>
+        </div>
+      </article>
+      <article style="background: #fff; border: 1px solid #E6E8EC; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column">
+        <div style="height: 168px; background: #0B0D17; display: flex; align-items: center; justify-content: center; color: #A9BCFF; position: relative">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>
+          <span style="position: absolute; top: 14px; left: 14px; padding: 4px 10px; border-radius: 999px; background: #F5B83D; color: #0B0D17; font-size: 12px; font-weight: 800">VIP ROOM</span>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 18px; font-weight: 700">PS5 VIP Room</h3><span style="font-size: 13px; color: #5B6070">Ruang privat ber-AC · TV 65" · maks 6</span></div>
+            <div style="text-align: right"><span style="font-size: 20px; font-weight: 800">Rp25.000</span><span style="display: block; font-size: 12px; color: #5B6070">/jam</span></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">GTA V</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">NBA 2K25</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">EA FC 25</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">+3 game</span>
+          </div>
+          <a href="client-booking.html" style="margin-top: auto; height: 44px; border-radius: 12px; background: #0B0D17; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">Lihat jadwal kosong</a>
+        </div>
+      </article>
+      <article style="background: #fff; border: 1px solid #E6E8EC; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column">
+        <div style="height: 168px; background: #EEF0F4; display: flex; align-items: center; justify-content: center; color: #5B6070; position: relative">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>
+          <span style="position: absolute; top: 14px; left: 14px; padding: 4px 10px; border-radius: 999px; background: #3A3F4E; color: #fff; font-size: 12px; font-weight: 700">PS4</span>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 18px; font-weight: 700">PS4 Hemat</h3><span style="font-size: 13px; color: #5B6070">TV 43" · maks 2 pemain · 3 unit</span></div>
+            <div style="text-align: right"><span style="font-size: 20px; font-weight: 800">Rp8.000</span><span style="display: block; font-size: 12px; color: #5B6070">/jam</span></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">eFootball</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">Tekken 7</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">MK 11</span><span style="padding: 4px 10px; border-radius: 8px; background: #F1F2F5; font-size: 12px; font-weight: 600; color: #3A3F4E">+2 game</span>
+          </div>
+          <a href="client-booking.html" style="margin-top: auto; height: 44px; border-radius: 12px; background: #0B0D17; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">Lihat jadwal kosong</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- PROMO -->
+  <section id="promo" style="max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.4px; color: #2F5BFF">PROMO BERLAKU</span>
+      <h2 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -1px">Main lebih lama, bayar lebih hemat</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px">
+      <article style="background: #2F5BFF; color: #fff; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 22px; font-weight: 800">Weekend Mabar</h3><p style="margin: 0; font-size: 14px; line-height: 1.6; color: #DCE4FF">Diskon 20% (maks Rp20.000) untuk main Sabtu &amp; Minggu, minimal 2 jam.</p></div>
+          <span style="font-size: 40px; font-weight: 800; letter-spacing: -1px">20%</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.35)">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.16)">WEEKEND20</span>
+          <span style="font-size: 13px; color: #DCE4FF">Berlaku s.d. 14 Des 2026</span>
+        </div>
+      </article>
+      <article style="background: #fff; border: 1px solid #E6E8EC; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 22px; font-weight: 800">Siang Hemat</h3><p style="margin: 0; font-size: 14px; line-height: 1.6; color: #5B6070">Potongan Rp5.000 untuk main antara jam 10:00–15:00, semua unit.</p></div>
+          <span style="font-size: 30px; font-weight: 800; letter-spacing: -1px; color: #2F5BFF">-5rb</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px dashed #D5D8E0">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; padding: 8px 12px; border-radius: 10px; background: #EAEFFF; color: #2F5BFF">SIANGHEMAT</span>
+          <span style="font-size: 13px; color: #5B6070">Berlaku s.d. 14 Des 2026</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- CARA BOOKING -->
+  <section style="max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; display: flex; flex-direction: column; gap: 28px">
+    <h2 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -1px">Booking dalam 4 langkah</h2>
+    <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+      <li style="background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 10px; background: #EAEFFF; color: #2F5BFF; font-weight: 800; display: flex; align-items: center; justify-content: center">1</span><strong style="font-size: 16px">Pilih tanggal &amp; unit</strong><span style="font-size: 14px; line-height: 1.6; color: #5B6070">Slot kosong tampil langsung per unit.</span></li>
+      <li style="background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 10px; background: #EAEFFF; color: #2F5BFF; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span><strong style="font-size: 16px">Pakai kode promo</strong><span style="font-size: 14px; line-height: 1.6; color: #5B6070">Total harga &amp; diskon dihitung otomatis.</span></li>
+      <li style="background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 10px; background: #EAEFFF; color: #2F5BFF; font-weight: 800; display: flex; align-items: center; justify-content: center">3</span><strong style="font-size: 16px">Bayar QRIS</strong><span style="font-size: 14px; line-height: 1.6; color: #5B6070">Scan pakai e-wallet atau m-banking apa pun.</span></li>
+      <li style="background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 10px; background: #EAEFFF; color: #2F5BFF; font-weight: 800; display: flex; align-items: center; justify-content: center">4</span><strong style="font-size: 16px">Datang &amp; main</strong><span style="font-size: 14px; line-height: 1.6; color: #5B6070">Tunjukkan kode booking ke kasir.</span></li>
+    </ol>
+  </section>
+
+  <!-- AI BAND -->
+  <section style="max-width: 1200px; margin: 0 auto; padding: 80px 24px 0">
+    <div style="background: #F2ECFE; border-radius: 28px; padding: 44px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: #7C3AED; color: #fff; font-size: 12px; font-weight: 700">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+          Jadwal.an AI
+        </span>
+        <h2 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #2A1366">Malas klik-klik? Booking cukup lewat chat.</h2>
+        <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4C3A7A">Tanya slot kosong, harga, atau promo. AI mengecek jadwal real-time, menghitung total, dan membuatkan booking setelah kamu konfirmasi. Butuh manusia? Langsung disambungkan ke admin.</p>
+        <a href="client-chat.html" style="align-self: flex-start; padding: 13px 20px; border-radius: 12px; background: #7C3AED; color: #fff; font-size: 14px; font-weight: 700">Mulai chat</a>
+      </div>
+      <div style="flex: 1 1 360px; min-width: 0; background: #fff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+        <div style="align-self: flex-end; max-width: 80%; padding: 12px 14px; border-radius: 16px 16px 4px 16px; background: #2F5BFF; color: #fff; font-size: 14px; line-height: 1.5">Besok jam 4 sore PS5 kosong ga? Mau main 2 jam</div>
+        <div style="align-self: flex-start; max-width: 85%; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: #F2ECFE; color: #2A1366; font-size: 14px; line-height: 1.5">Ada kak! <strong>PS5 - TV 1</strong> kosong Minggu, 15 Nov 16:00–18:00. Total <strong>Rp24.000</strong> (sudah diskon WEEKEND20). Mau aku bookingkan?</div>
+        <div style="align-self: flex-end; max-width: 80%; padding: 12px 14px; border-radius: 16px 16px 4px 16px; background: #2F5BFF; color: #fff; font-size: 14px; line-height: 1.5">Gas!</div>
+        <div style="align-self: flex-start; width: 85%; padding: 14px; border-radius: 14px; border: 1px solid #E6E8EC; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 12px; font-weight: 700; color: #15803D">✓ Booking terkonfirmasi</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px">JA261115K3DQ</span>
+          <span style="font-size: 13px; color: #5B6070">PS5 - TV 1 · Min, 15 Nov · 16:00–18:00</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section style="max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+      <h2 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -1px">Kata mereka yang sudah main</h2>
+      <div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 30px; font-weight: 800">[RATING]</span><span style="font-size: 14px; color: #5B6070">rata-rata dari [JUMLAH] ulasan</span></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px">
+      <figure style="margin: 0; background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+        <span style="color: #F5A524; font-size: 16px; letter-spacing: 2px" aria-label="5 dari 5 bintang">★★★★★</span>
+        <blockquote style="margin: 0; font-size: 15px; line-height: 1.6">"[Isi ulasan pelanggan dari GET /reviews]"</blockquote>
+        <figcaption style="font-size: 13px; color: #5B6070">[Nama depan] · PS5 VIP Room</figcaption>
+      </figure>
+      <figure style="margin: 0; background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+        <span style="color: #F5A524; font-size: 16px; letter-spacing: 2px" aria-label="5 dari 5 bintang">★★★★★</span>
+        <blockquote style="margin: 0; font-size: 15px; line-height: 1.6">"[Isi ulasan pelanggan dari GET /reviews]"</blockquote>
+        <figcaption style="font-size: 13px; color: #5B6070">[Nama depan] · PS5 - TV 1</figcaption>
+      </figure>
+      <figure style="margin: 0; background: #fff; border: 1px solid #E6E8EC; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+        <span style="color: #F5A524; font-size: 16px; letter-spacing: 2px" aria-label="4 dari 5 bintang">★★★★☆</span>
+        <blockquote style="margin: 0; font-size: 15px; line-height: 1.6">"[Isi ulasan pelanggan dari GET /reviews]"</blockquote>
+        <figcaption style="font-size: 13px; color: #5B6070">[Nama depan] · PS4 - TV 3</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="margin-top: 80px; background: #0B0D17; color: #B4B8C8">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 48px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 20px; font-weight: 800; color: #fff">Jadwal<span style="color: #7FA0FF">.</span>an</span>
+        <span style="font-size: 14px; line-height: 1.6">PS Cuku Sunguik — rental PlayStation dengan booking online.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+        <strong style="color: #fff">Lokasi</strong><span>[Alamat rental]</span><span>Parkir motor gratis</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+        <strong style="color: #fff">Jam buka</strong><span>Setiap hari 10:00–23:00 WIB</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+        <strong style="color: #fff">Kontak</strong><span>WhatsApp [nomor rental]</span><a href="client-chat.html" style="color: #A9BCFF">Chat dengan AI</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- floating chat -->
+  <a href="client-chat.html" aria-label="Buka chat Jadwal.an AI" style="position: fixed; right: 28px; bottom: 28px; height: 56px; padding: 0 20px 0 16px; border-radius: 999px; background: #7C3AED; color: #fff; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; box-shadow: 0 12px 32px -6px rgba(124,58,237,0.55)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
+    Tanya AI
+  </a>
+</div>
+</body>
+</html>

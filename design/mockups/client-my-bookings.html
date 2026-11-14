@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jadwal.an — Booking Saya</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="c-nav">
+  <nav class="c-nav-inner">
+    <a href="client-home.html" class="logo"><span class="logo-mark"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></span>Jadwal<b>.</b>an</a>
+    <div class="c-links"><a href="client-home.html">Beranda</a><a href="client-booking.html">Booking</a><a href="client-home.html#promo">Promo</a><a href="client-my-bookings.html" class="active">Booking Saya</a></div>
+    <div class="row"><span class="avatar">RA</span><span style="font-weight:700">Raka</span></div>
+  </nav>
+</header>
+
+<main class="c-main col" style="gap:24px">
+  <section class="card card-pad row-wrap between" style="gap:20px">
+    <div class="row" style="gap:16px">
+      <span class="avatar" style="width:56px;height:56px;font-size:18px">RA</span>
+      <div class="col" style="gap:4px">
+        <div class="row" style="gap:8px"><h1 class="h2">Raka Pratama</h1><span class="badge b-loyal no-dot">Loyal</span></div>
+        <span class="small muted">0812-3456-7890 · Favorit PS5 jam 16:00</span>
+      </div>
+    </div>
+    <div class="row-wrap" style="gap:28px">
+      <div class="col" style="gap:0"><span class="xs muted">Total sesi</span><span style="font-size:22px;font-weight:800">12</span></div>
+      <div class="col" style="gap:0"><span class="xs muted">Total jam</span><span style="font-size:22px;font-weight:800">27</span></div>
+      <div class="col" style="gap:4px"><span class="xs muted">Menuju VIP</span><span class="row" style="gap:8px"><span style="width:120px;height:8px;border-radius:999px;background:var(--surface-muted);overflow:hidden;display:block"><span style="display:block;width:60%;height:100%;background:var(--primary)"></span></span><span class="small" style="font-weight:700">12/20 sesi</span></span></div>
+      <a href="client-booking.html" class="btn btn-primary">Booking baru</a>
+    </div>
+  </section>
+
+  <div class="tabs" style="align-self:flex-start"><button class="tab active" type="button">Akan datang (2)</button><button class="tab" type="button">Riwayat</button></div>
+
+  <section class="grid-2">
+    <article class="card col" style="gap:0;overflow:hidden">
+      <div class="card-pad row between" style="background:var(--primary);color:#fff">
+        <div class="col" style="gap:2px"><span class="xs" style="opacity:.85;font-weight:700">MINGGU, 15 NOV 2026</span><span style="font-size:24px;font-weight:800">16:00 – 18:00</span></div>
+        <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">confirmed</span>
+      </div>
+      <div class="card-pad col" style="gap:14px">
+        <div class="row between"><span class="h3">PS5 - TV 1</span><span class="mono" style="font-weight:700">JA261115K3DQ</span></div>
+        <div class="row-wrap small" style="gap:16px;color:var(--text-2)"><span>2 jam</span><span class="code-chip">WEEKEND20</span><span class="badge b-paid">QRIS lunas</span></div>
+        <div class="row between"><span class="muted small">Total</span><span style="font-weight:800;font-size:18px">Rp24.000</span></div>
+        <div class="row" style="gap:8px"><a href="client-payment.html" class="btn btn-outline grow">Detail</a><button type="button" class="btn btn-danger-outline grow">Batalkan</button></div>
+        <p class="xs muted">Pembatalan maksimal 1 jam sebelum jam main. Refund QRIS diproses admin.</p>
+      </div>
+    </article>
+    <article class="card col" style="gap:0;overflow:hidden">
+      <div class="card-pad row between" style="background:var(--warning-soft)">
+        <div class="col" style="gap:2px"><span class="xs" style="font-weight:700;color:var(--warning)">SABTU, 21 NOV 2026</span><span style="font-size:24px;font-weight:800">19:00 – 22:00</span></div>
+        <span class="badge b-pending">pending</span>
+      </div>
+      <div class="card-pad col" style="gap:14px">
+        <div class="row between"><span class="h3">PS5 - VIP Room</span><span class="mono" style="font-weight:700">JA261121P7XM</span></div>
+        <div class="row-wrap small" style="gap:16px;color:var(--text-2)"><span>3 jam</span><span style="color:var(--warning);font-weight:700">Bayar sebelum 18:42 hari ini</span></div>
+        <div class="row between"><span class="muted small">Total</span><span style="font-weight:800;font-size:18px">Rp60.000</span></div>
+        <div class="row" style="gap:8px"><a href="client-payment.html" class="btn btn-primary grow">Bayar sekarang</a><button type="button" class="btn btn-danger-outline">Batalkan</button></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><span class="h3">Riwayat terakhir</span><a href="#" class="small" style="font-weight:700">Lihat semua</a></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:720px">
+        <thead><tr><th>Tanggal</th><th>Unit</th><th>Durasi</th><th>Total</th><th>Status</th><th>Ulasan</th></tr></thead>
+        <tbody>
+          <tr><td>Sab, 7 Nov · 16:00</td><td>PS5 - TV 2</td><td>2 jam</td><td>Rp30.000</td><td><span class="badge b-completed">completed</span></td><td><button type="button" class="btn btn-sm btn-outline">Beri ulasan</button></td></tr>
+          <tr><td>Min, 1 Nov · 20:00</td><td>PS5 - VIP Room</td><td>3 jam</td><td>Rp60.000</td><td><span class="badge b-completed">completed</span></td><td><span style="color:#F5A524;letter-spacing:2px" aria-label="5 bintang">★★★★★</span></td></tr>
+          <tr><td>Rab, 28 Okt · 15:00</td><td>PS4 - TV 1</td><td>2 jam</td><td>Rp11.000</td><td><span class="badge b-cancelled">cancelled</span></td><td class="muted">—</td></tr>
+          <tr><td>Sab, 24 Okt · 17:00</td><td>PS5 - TV 1</td><td>2 jam</td><td>Rp30.000</td><td><span class="badge b-no_show">no_show</span></td><td class="muted">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card card-pad col" style="gap:14px;max-width:520px;box-shadow:var(--shadow)">
+    <div class="row between"><span class="h3">Beri ulasan — PS5 - TV 2, 7 Nov</span><button type="button" class="icon-btn" aria-label="Tutup"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="row" style="gap:6px;color:#F5A524;font-size:30px" aria-label="Rating 4 dari 5">★★★★<span style="color:#D5D8E0">★</span></div>
+    <label class="field">Ceritakan pengalamanmu<textarea class="textarea" placeholder="Unit, kebersihan, pelayanan…"></textarea></label>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button type="button" class="btn btn-ghost">Nanti saja</button><button type="button" class="btn btn-primary">Kirim ulasan</button></div>
+  </section>
+</main>
+
+<a href="client-chat.html" class="fab" aria-label="Buka chat Jadwal.an AI"><svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>Tanya AI</a>
+</body>
+</html>
