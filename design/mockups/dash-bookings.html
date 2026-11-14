@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Booking</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="d-shell">
+  <aside class="d-side">
+    <a href="dash-overview.html" class="logo"><span class="logo-mark"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></span>Jadwal<b>.</b>an</a>
+    <nav class="d-nav" aria-label="Menu admin">
+      <span class="d-nav-label">UTAMA</span>
+      <a href="dash-overview.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Ringkasan</a>
+      <a href="dash-schedule.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Jadwal Unit</a>
+      <a href="dash-bookings.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Booking<span class="count">3</span></a>
+      <a href="dash-livechat.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live Chat<span class="count">2</span></a>
+      <span class="d-nav-label">PELANGGAN</span>
+      <a href="dash-customers.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pelanggan</a>
+      <a href="dash-promo-crm.html" class="ai-link"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4"/></svg>AI Promo CRM</a>
+      <span class="d-nav-label">SISTEM</span>
+      <a href="dash-ai.html" class="ai-link"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4M8 4h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg>Pengaturan AI</a>
+      <a href="dash-settings.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Unit, Promo &amp; Setelan</a>
+    </nav>
+    <div class="d-side-foot"><span class="avatar" style="background:var(--ink-3);color:#fff">AD</span><div class="col grow" style="gap:0"><span style="color:#fff;font-weight:700;font-size:13px">Admin Jadwalan</span><span class="xs">admin@jadwalan.id</span></div><a href="#" aria-label="Keluar" style="color:var(--ink-text)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></a></div>
+  </aside>
+  <div class="d-content">
+    <header class="d-top">
+      <div class="col" style="gap:0"><h1 class="h2">Booking</h1><span class="small muted">Semua reservasi dari web, AI, dan manual</span></div>
+      <div class="row-wrap">
+        <button type="button" class="btn btn-outline"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export Excel</button>
+        <button type="button" class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Booking manual</button>
+      </div>
+    </header>
+
+    <main class="d-page">
+      <!-- status summary chips -->
+      <div class="row-wrap" style="gap:8px">
+        <button type="button" class="btn btn-sm btn-dark">Semua · 164</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:var(--warning)"></span>pending · 3</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:var(--primary)"></span>confirmed · 21</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:var(--info)"></span>checked_in · 4</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:var(--success)"></span>completed · 128</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:var(--danger)"></span>cancelled · 6</button>
+        <button type="button" class="btn btn-sm btn-outline"><span class="dot" style="background:#9AA0B0"></span>no_show · 2</button>
+      </div>
+
+      <div class="row-wrap" style="gap:20px;align-items:flex-start">
+        <section class="card" style="flex:999 1 640px;min-width:0">
+          <!-- filters -->
+          <div class="row-wrap" style="padding:14px 16px;gap:10px;border-bottom:1px solid var(--border)">
+            <label class="input-icon grow" style="min-width:220px" aria-label="Cari booking"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input class="input" placeholder="Kode booking, nama, atau WA"></label>
+            <label aria-label="Rentang tanggal"><select class="select" style="width:170px"><option>14–20 Nov 2026</option></select></label>
+            <label aria-label="Unit"><select class="select" style="width:150px"><option>Semua unit</option></select></label>
+            <label aria-label="Sumber"><select class="select" style="width:130px"><option>Semua sumber</option><option>web</option><option>ai</option><option>manual</option></select></label>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th><input type="checkbox" aria-label="Pilih semua"></th><th>Kode</th><th>Pelanggan</th><th>Unit</th><th>Jadwal</th><th>Total</th><th>Bayar</th><th>Sumber</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr class="selected"><td><input type="checkbox" checked aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114R8TW</td><td><div class="col" style="gap:0"><span style="font-weight:700">Raka Pratama</span><span class="xs muted">0812-3456-7890</span></div></td><td>PS5 - TV 1</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">16:00–18:00 · 2j</span></div></td><td><div class="col" style="gap:0"><span style="font-weight:700">Rp24.000</span><span class="xs" style="color:var(--success)">−Rp6.000</span></div></td><td><span class="badge b-paid">QRIS</span></td><td><span class="badge b-ai no-dot">AI</span></td><td><span class="badge b-confirmed">confirmed</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114M2KD</td><td><div class="col" style="gap:0"><span style="font-weight:700">Bima Aditya</span><span class="xs muted">0857-1122-3344</span></div></td><td>PS5 - TV 2</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">16:00–19:00 · 3j</span></div></td><td><span style="font-weight:700">Rp45.000</span></td><td><span class="badge b-pending">menunggu</span></td><td><span class="chip">web</span></td><td><span class="badge b-pending">pending</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114H5PN</td><td><div class="col" style="gap:0"><span style="font-weight:700">Dimas Saputra</span><span class="xs muted">0813-9988-7766</span></div></td><td>PS5 - TV 2</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">14:00–16:00 · 2j</span></div></td><td><span style="font-weight:700">Rp30.000</span></td><td><span class="badge b-paid">tunai</span></td><td><span class="chip">manual</span></td><td><span class="badge b-checked_in">checked_in</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114V9QA</td><td><div class="col" style="gap:0"><span class="row" style="gap:6px;font-weight:700">Kevin Laksana <span class="badge b-vip no-dot" style="height:18px;font-size:10px">vip</span></span><span class="xs muted">0811-2233-4455</span></div></td><td>PS5 - VIP Room</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">17:00–19:00 · 2j</span></div></td><td><div class="col" style="gap:0"><span style="font-weight:700">Rp35.000</span><span class="xs" style="color:var(--success)">VIPONLY</span></div></td><td><span class="badge b-paid">QRIS</span></td><td><span class="chip">web</span></td><td><span class="badge b-confirmed">confirmed</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114C3LE</td><td><div class="col" style="gap:0"><span style="font-weight:700">Yoga Prasetyo</span><span class="xs muted">0896-5544-3322</span></div></td><td>PS5 - TV 1</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">10:00–12:00 · 2j</span></div></td><td><span style="font-weight:700">Rp25.000</span></td><td><span class="badge b-paid">QRIS</span></td><td><span class="badge b-ai no-dot">AI</span></td><td><span class="badge b-completed">completed</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261114T7GB</td><td><div class="col" style="gap:0"><span style="font-weight:700">Arif Hidayat</span><span class="xs muted">0822-7788-9900</span></div></td><td>PS5 - VIP Room</td><td><div class="col" style="gap:0"><span style="font-weight:600">Sab, 14 Nov</span><span class="xs muted">10:00–14:00 · 4j</span></div></td><td><span style="font-weight:700">Rp100.000</span></td><td><span class="chip">—</span></td><td><span class="chip">web</span></td><td><span class="badge b-no_show">no_show</span></td></tr>
+                <tr><td><input type="checkbox" aria-label="Pilih"></td><td class="mono" style="font-weight:700">JA261113Z1RM</td><td><div class="col" style="gap:0"><span style="font-weight:700">Lina Marlina</span><span class="xs muted">0819-3344-5566</span></div></td><td>PS4 - TV 2</td><td><div class="col" style="gap:0"><span style="font-weight:600">Jum, 13 Nov</span><span class="xs muted">19:00–21:00 · 2j</span></div></td><td><span style="font-weight:700">Rp16.000</span></td><td><span class="chip">expired</span></td><td><span class="chip">web</span></td><td><span class="badge b-cancelled">cancelled</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="row between small" style="padding:12px 16px;border-top:1px solid var(--border)"><span class="muted">Menampilkan 1–7 dari 164</span><div class="row" style="gap:6px"><button type="button" class="btn btn-sm btn-outline">Sebelumnya</button><button type="button" class="btn btn-sm btn-dark">1</button><button type="button" class="btn btn-sm btn-outline">2</button><button type="button" class="btn btn-sm btn-outline">3</button><button type="button" class="btn btn-sm btn-outline">Berikutnya</button></div></div>
+        </section>
+
+        <!-- detail drawer -->
+        <aside class="card col" style="flex:1 1 340px;max-width:400px;gap:0;box-shadow:var(--shadow)">
+          <div class="card-head"><div class="col" style="gap:2px"><span class="mono" style="font-size:16px;font-weight:700">JA261114R8TW</span><span class="row xs" style="gap:6px"><span class="badge b-confirmed">confirmed</span><span class="badge b-ai no-dot">dibuat oleh AI</span></span></div><button type="button" class="icon-btn" aria-label="Tutup"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+          <div class="card-pad col" style="gap:16px">
+            <div class="row" style="gap:12px"><span class="avatar">RP</span><div class="col grow" style="gap:0"><span style="font-weight:700">Raka Pratama</span><span class="xs muted">loyal · 12 sesi · Rp318.000</span></div><a href="dash-customers.html" class="small" style="font-weight:700">Profil</a></div>
+            <dl class="col" style="gap:8px;margin:0;padding:14px;border-radius:12px;background:var(--surface-muted)">
+              <div class="row between small"><dt class="muted">Unit</dt><dd style="margin:0;font-weight:700">PS5 - TV 1</dd></div>
+              <div class="row between small"><dt class="muted">Jadwal</dt><dd style="margin:0;font-weight:700">Sab 14 Nov, 16:00–18:00</dd></div>
+              <div class="row between small"><dt class="muted">Subtotal</dt><dd style="margin:0;font-weight:700">Rp30.000</dd></div>
+              <div class="row between small"><dt class="muted">Diskon <span class="code-chip">WEEKEND20</span></dt><dd style="margin:0;font-weight:700;color:var(--success)">−Rp6.000</dd></div>
+              <div class="row between"><dt style="font-weight:700">Total</dt><dd style="margin:0;font-weight:800;font-size:18px">Rp24.000</dd></div>
+              <div class="row between small"><dt class="muted">Pembayaran</dt><dd style="margin:0"><span class="badge b-paid">QRIS lunas 13:02</span></dd></div>
+            </dl>
+            <div class="col" style="gap:8px">
+              <span class="overline">Ubah status</span>
+              <div class="row-wrap" style="gap:8px"><button type="button" class="btn btn-primary grow">Check-in</button><button type="button" class="btn btn-outline">Ubah jadwal</button></div>
+              <div class="row-wrap" style="gap:8px"><button type="button" class="btn btn-outline grow">Tandai no-show</button><button type="button" class="btn btn-danger-outline grow">Batalkan</button></div>
+              <button type="button" class="btn btn-ghost">Tandai refund</button>
+            </div>
+            <label class="field">Catatan admin<textarea class="textarea" style="min-height:64px">Main ber-4, minta stik tambahan.</textarea></label>
+            <div class="col" style="gap:10px">
+              <span class="overline">Riwayat</span>
+              <ol class="col" style="list-style:none;margin:0;padding:0;gap:10px">
+                <li class="row" style="align-items:flex-start;gap:10px"><span class="dot" style="margin-top:6px;background:var(--ai)"></span><div class="col grow" style="gap:0"><span class="small" style="font-weight:600">Dibuat via chat AI (Booking Agent)</span><span class="xs muted">12:58 · sesi "Booking PS5 Minggu 16:00"</span></div></li>
+                <li class="row" style="align-items:flex-start;gap:10px"><span class="dot" style="margin-top:6px;background:var(--success)"></span><div class="col grow" style="gap:0"><span class="small" style="font-weight:600">Pembayaran QRIS diterima</span><span class="xs muted">13:02 · webhook Midtrans</span></div></li>
+                <li class="row" style="align-items:flex-start;gap:10px"><span class="dot" style="margin-top:6px;background:var(--primary)"></span><div class="col grow" style="gap:0"><span class="small" style="font-weight:600">pending → confirmed</span><span class="xs muted">13:02 · sistem</span></div></li>
+              </ol>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- manual booking modal preview -->
+      <section class="card col" style="max-width:640px;gap:0;box-shadow:0 24px 60px -20px rgba(11,13,23,.3)">
+        <div class="card-head"><span class="h3">Booking manual (walk-in / telepon)</span><span class="xs muted">contoh dialog</span></div>
+        <form class="card-pad col" style="gap:14px">
+          <div class="tabs"><button type="button" class="tab active">Pelanggan lama</button><button type="button" class="tab">Pelanggan baru</button></div>
+          <label class="field">Cari pelanggan<span class="input-icon"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input class="input" value="Dimas Saputra · 0813-9988-7766"></span></label>
+          <div class="grid-3" style="gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+            <label class="field">Unit<select class="select"><option>PS5 - TV 2</option></select></label>
+            <label class="field">Tanggal<input class="input" value="14/11/2026"></label>
+            <label class="field">Mulai<select class="select"><option>20:00</option></select></label>
+            <label class="field">Durasi<select class="select"><option>2 jam</option></select></label>
+            <label class="field">Kode promo<input class="input mono" placeholder="Opsional"></label>
+            <label class="field">Pembayaran<select class="select"><option>Tunai (lunas)</option><option>Transfer (lunas)</option><option>Belum bayar</option></select></label>
+          </div>
+          <div class="row between" style="padding:12px 14px;border-radius:12px;background:var(--surface-muted)"><span class="small muted">Total</span><span style="font-weight:800;font-size:18px">Rp30.000</span></div>
+          <div class="row" style="justify-content:flex-end;gap:8px"><button type="button" class="btn btn-ghost">Batal</button><button type="button" class="btn btn-primary">Simpan booking</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>

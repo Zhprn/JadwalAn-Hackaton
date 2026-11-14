@@ -8,18 +8,544 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// =====================================================================
+// JadwalAn — Rental PlayStation
+// Status disimpan sebagai String (kompatibel dengan controller & Zod).
+// Nilai yang valid tertulis di komentar tiap kolom.
+// =====================================================================
+
 enum Role {
   ADMIN
   CUSTOMER
 }
 
+// =====================================================================
+// 1. PENGATURAN RENTAL
+// =====================================================================
+
+model StoreSetting {
+  id                String  @id @default(uuid())
+  name              String  @default("PS Cuku Sunguik")
+  address           String?
+  phone             String?
+  logoUrl           String?
+  timezone          String  @default("Asia/Jakarta")
+  openTime          String  @default("10:00") // HH:mm
+  closeTime         String  @default("20:00") // HH:mm
+  closedDays        Int[]   @default([]) // 0 = Minggu … 6 = Sabtu
+  minBookingHours   Int     @default(1)
+  maxBookingHours   Int     @default(8)
+  slotIntervalMins  Int     @default(60)
+  bookingLeadMins   Int     @default(30) // minimal booking X menit sebelum mulai
+  pendingExpiryMins Int     @default(30) // booking pending otomatis batal
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================================
+// 2. ADMIN
+// =====================================================================
+
 model User {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   password     String
-  refreshToken String?  @db.Text
-  role         Role     @default(CUSTOMER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  refreshToken String?   @db.Text
+  role         Role      @default(CUSTOMER)
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+
+  assignedChats   ChatSession[]      @relation("AssignedAdmin")
+  sentMessages    ChatMessage[]      @relation("AdminMessages")
+  chatEvents      ChatSessionEvent[]
+  createdBookings Booking[]          @relation("BookingCreatedBy")
+  promoMessages   PromoMessage[]
+  quickReplies    QuickReply[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+  aiKnowledge     AiKnowledge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================================
+// 3. UNIT PLAYSTATION
+// =====================================================================
+
+model Station {
+  id           String   @id @default(uuid())
+  name         String // "PS5 - TV 1"
+  category     String // PS5 | PS4
+  pricePerHour Int
+  status       String   @default("active") // active | maintenance | inactive
+  description  String?
+  imageUrl     String?
+  maxPlayers   Int      @default(2)
+  games        String[] @default([]) // ["eFootball", "FC 25", "Tekken 8"]
+  sortOrder    Int      @default(0)
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+}
+
+// =====================================================================
+// 4. PELANGGAN
+// =====================================================================
+
+model Customer {
+  id           String  @id @default(uuid())
+  name         String
+  password     String
+  whatsapp     String  @unique
+  avatarUrl    String?
+  refreshToken String? @db.Text
+
+  // Statistik CRM (diperbarui saat booking completed)
+  totalHours      Int       @default(0)
+  totalSessions   Int       @default(0)
+  totalSpent      Int       @default(0)
+  lastPlayed      DateTime?
+  favoriteConsole String? // PS5 | PS4
+  favoriteHour    String? // "16:00"
+  tier            String    @default("regular") // regular | loyal | vip
+  tags            String[]  @default([])
+  notes           String?   @db.Text
+  lastPromoSentAt DateTime?
+  optOutPromo     Boolean   @default(false)
+
+  bookings      Booking[]
+  chatSessions  ChatSession[]
+  reviews       Review[]
+  promoMessages PromoMessage[]
+  aiLogs        AiLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tier])
+  @@index([lastPlayed])
+}
+
+// =====================================================================
+// 5. PROMO
+// =====================================================================
+
+model Promo {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  title       String? // "Weekend Mabar"
+  description String? @db.Text
+  consoleType String  @default("ALL") // ALL | PS5 | PS4
+
+  discountType       String @default("percent") // percent | nominal
+  discountPercentage Int // jika percent
+  discountAmount     Int    @default(0) // jika nominal
+  maxDiscount        Int?
+  minHours           Int    @default(1)
+  minTransaction     Int    @default(0)
+
+  validDays  Int[]    @default([]) // kosong = semua hari
+  validFrom  String? // "10:00" (mis. promo siang)
+  validTo    String? // "17:00"
+  startDate  DateTime @default(now())
+  validUntil DateTime
+
+  isActive         Boolean @default(true)
+  isPublic         Boolean @default(true) // tampil di halaman Promo client
+  targetTier       String? // null = semua | loyal | vip
+  usageLimit       Int?
+  perCustomerLimit Int?
+  usedCount        Int     @default(0)
+
+  bookings      Booking[]
+  promoMessages PromoMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================================
+// 6. RESERVASI & PEMBAYARAN
+// =====================================================================
+
+model Booking {
+  id             String    @id @default(uuid())
+  bookingCode    String?   @unique // "JA251003"
+  startTime      DateTime
+  endTime        DateTime
+  durationHours  Int       @default(1)
+  subtotal       Int       @default(0)
+  discount       Int       @default(0)
+  totalPrice     Int       @default(0)
+  status         String    @default("confirmed") // pending | confirmed | checked_in | completed | cancelled | no_show
+  source         String    @default("manual") // manual | web | ai
+  channel        String? // whatsapp | web
+  notes          String?   @db.Text
+  cancelReason   String?
+  checkedInAt    DateTime?
+  cancelledAt    DateTime?
+  reminderSentAt DateTime?
+
+  stationId String
+  station   Station @relation(fields: [stationId], references: [id])
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  promoId String?
+  promo   Promo?  @relation(fields: [promoId], references: [id])
+
+  chatSessionId String?
+  chatSession   ChatSession? @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation("BookingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  payment      Payment?
+  review       Review?
+  chatMessages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stationId, startTime])
+  @@index([customerId, startTime])
+  @@index([status, startTime])
+  @@index([source])
+}
+
+model Payment {
+  id        String  @id @default(uuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  provider      String    @default("midtrans")
+  method        String    @default("qris") // qris | cash | transfer
+  amount        Int
+  status        String    @default("pending") // pending | paid | expired | failed | refunded
+  transactionId String?   @unique
+  qrUrl         String?   @db.Text
+  rawResponse   Json?
+  paidAt        DateTime?
+  expiredAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// =====================================================================
+// 7. CHANNEL (WhatsApp / Web Chat)
+// =====================================================================
+
+model Channel {
+  id          String    @id @default(uuid())
+  type        String    @unique // whatsapp | web
+  name        String // "WhatsApp Bisnis"
+  phoneNumber String?
+  isActive    Boolean   @default(true)
+  status      String    @default("disconnected") // connected | disconnected | error
+  config      Json? // token / webhook secret (simpan terenkripsi)
+  lastSyncAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================================
+// 8. LIVE CHAT — SESI, PESAN, EVENT
+// Satu pelanggan bisa punya banyak sesi; sesi lama bisa dibuka kembali.
+// =====================================================================
+
+model ChatSession {
+  id       String  @id @default(uuid())
+  title    String? // ringkasan AI, mis. "Booking PS5 jam 16:00"
+  summary  String? @db.Text // ringkasan percakapan oleh AI
+  channel  String  @default("web") // web | whatsapp
+  status   String  @default("ai_pilot") // ai_pilot | human | closed
+  intent   String? // booking | tanya_harga | tanya_promo | komplain | lainnya
+  priority String  @default("normal") // normal | high
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  assignedAdminId String?
+  assignedAdmin   User?     @relation("AssignedAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  takenOverAt     DateTime?
+
+  lastMessage      String?   @db.Text
+  lastMessageAt    DateTime?
+  lastSender       String? // customer | ai | admin
+  unreadByAdmin    Int       @default(0)
+  unreadByCustomer Int       @default(0)
+  closedAt         DateTime?
+  rating           Int? // 1–5, penilaian pelanggan terhadap chat
+
+  messages ChatMessage[]
+  events   ChatSessionEvent[]
+  bookings Booking[]
+  aiLogs   AiLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId, lastMessageAt])
+  @@index([status, lastMessageAt])
+  @@index([assignedAdminId])
+}
+
+model ChatMessage {
+  id            String  @id @default(uuid())
+  sender        String // customer | ai | admin | system
+  type          String  @default("text") // text | image | booking_card | promo_card | system
+  message       String  @db.Text
+  attachmentUrl String?
+  metadata      Json? // payload tool call AI, dll
+  externalId    String? @unique // id pesan WhatsApp
+  status        String  @default("sent") // sending | sent | delivered | read | failed
+
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  adminId String?
+  admin   User?   @relation("AdminMessages", fields: [adminId], references: [id], onDelete: SetNull)
+
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+// Riwayat aksi pada sesi: dibuat, take over, release, close, reopen
+model ChatSessionEvent {
+  id   String  @id @default(uuid())
+  type String // created | takeover | release | closed | reopened | assigned | booking_created
+  note String?
+
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  adminId String?
+  admin   User?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+// Template balasan cepat admin
+model QuickReply {
+  id       String  @id @default(uuid())
+  shortcut String  @unique // "/harga"
+  title    String
+  content  String  @db.Text
+  isActive Boolean @default(true)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================================
+// 9. MANAJEMEN AI
+// =====================================================================
+
+// Konfigurasi asisten AI (1 baris aktif per fitur)
+model AiAgent {
+  id           String  @id @default(uuid())
+  feature      String  @unique // chat | crm_promo | copywriter | insight
+  name         String  @default("Jadwal.an AI")
+  provider     String  @default("gemini")
+  model        String  @default("gemini-2.5-flash")
+  systemPrompt String  @db.Text
+  temperature  Float   @default(0.7)
+  maxTokens    Int     @default(1024)
+  isActive     Boolean @default(true)
+
+  // khusus feature = chat
+  autoReply        Boolean  @default(true)
+  canCreateBooking Boolean  @default(true) // boleh buat booking otomatis
+  bookingStatus    String   @default("confirmed") // status booking dari AI: pending | confirmed
+  greetingMessage  String?  @db.Text
+  fallbackMessage  String?  @db.Text // jika AI gagal / di luar konteks
+  handoffKeywords  String[] @default([]) // ["admin", "komplain", "refund"] → otomatis ke admin
+  activeFrom       String? // "10:00"; null = 24 jam
+  activeTo         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Basis pengetahuan / FAQ yang dibaca AI
+model AiKnowledge {
+  id       String  @id @default(uuid())
+  category String // faq | aturan | harga | lokasi | game | lainnya
+  question String?
+  content  String  @db.Text
+  isActive Boolean @default(true)
+  priority Int     @default(0)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isActive])
+}
+
+// Log setiap pemanggilan AI (monitoring, biaya, debugging)
+model AiLog {
+  id               String  @id @default(uuid())
+  feature          String // chat | crm_promo | copywriter | insight
+  model            String
+  input            Json?
+  output           Json?
+  toolCalls        Json? // [{ name: "create_booking", args: {...}, result: {...} }]
+  promptTokens     Int     @default(0)
+  completionTokens Int     @default(0)
+  latencyMs        Int     @default(0)
+  status           String  @default("success") // success | error | handoff
+  errorMessage     String? @db.Text
+
+  sessionId String?
+  session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([feature, createdAt])
+  @@index([status])
+}
+
+// Insight AI yang di-cache (banner dashboard, analisis pelanggan)
+model AiInsight {
+  id        String    @id @default(uuid())
+  type      String // dashboard_daily | customer_analysis | slot_recommendation
+  refId     String? // customerId jika customer_analysis
+  date      DateTime? @db.Date
+  title     String?
+  content   String    @db.Text
+  data      Json? // angka pendukung, tags, dll
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([type, refId])
+  @@index([type, date])
+}
+
+// =====================================================================
+// 10. AI PROMO CRM
+// =====================================================================
+
+model PromoMessage {
+  id                 String    @id @default(uuid())
+  content            String    @db.Text
+  tone               String    @default("friendly") // friendly | urgent | exclusive | casual
+  tags               String[]  @default([]) // ["PS5", "Absen 14 hari", "Diskon 15%"]
+  version            Int       @default(1) // naik saat "Buat versi lain"
+  status             String    @default("draft") // draft | sent | failed
+  channel            String    @default("whatsapp")
+  sentAt             DateTime?
+  errorMessage       String?
+  convertedBookingId String? // booking yang terjadi setelah promo dikirim
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  promoId String?
+  promo   Promo?  @relation(fields: [promoId], references: [id], onDelete: SetNull)
+
+  generatedById String?
+  generatedBy   User?   @relation(fields: [generatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([status])
+}
+
+// =====================================================================
+// 11. ULASAN, NOTIFIKASI, LOG, METRIK
+// =====================================================================
+
+model Review {
+  id      String  @id @default(uuid())
+  rating  Int // 1–5
+  comment String? @db.Text
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  bookingId String?  @unique
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id     String  @id @default(uuid())
+  type   String // new_chat | new_booking | handoff | payment_paid | booking_cancelled
+  title  String
+  body   String?
+  link   String? // "/dashboard/livechat?session=..."
+  isRead Boolean @default(false)
+
+  userId String? // null = untuk semua admin
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model ActivityLog {
+  id       String  @id @default(uuid())
+  action   String // booking.create | booking.cancel | promo.update | settings.update | ...
+  entity   String // Booking | Promo | Station | ...
+  entityId String?
+  changes  Json?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+model Metric {
+  id                String   @id @default(uuid())
+  date              DateTime @unique @db.Date
+  totalRevenue      Int      @default(0)
+  occupancyRate     Float    @default(0.0)
+  slotsFilled       Int      @default(0)
+  slotsTotal        Int      @default(0)
+  totalBookings     Int      @default(0)
+  aiBookings        Int      @default(0)
+  cancelledBookings Int      @default(0)
+  newCustomers      Int      @default(0)
+  chatSessions      Int      @default(0)
+  peakHour          String? // "16:00"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
