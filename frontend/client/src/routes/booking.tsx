@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check, MonitorPlay, Gamepad2, ArrowRight, Mi
 import { useState, useEffect } from 'react'
 
 // Import komponen pembayaran yang baru dibuat
-import { PaymentQRIS } from '../components/PaymentQRIS'
+import { PaymentQRIS } from '../components/PaymentQRIS'git 
 
 export const Route = createFileRoute('/booking')({
   component: BookingPage,
