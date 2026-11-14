@@ -357,3 +357,24 @@ export interface ActivityLog {
   createdAt: string;
   user: { id: string; name: string } | null;
 }
+
+export type WaConnStatus = "disconnected" | "connecting" | "qr" | "connected";
+
+export interface WaConfig {
+  autoReply: boolean;
+  notifyBooking: boolean;
+  notifyReminder: boolean;
+  reminderMins: number;
+}
+
+export interface WaStatus {
+  status: WaConnStatus;
+  qr: string | null;
+  qrExpiresIn: number | null;
+  phone: string | null;
+  name: string | null;
+  connectedAt: string | null;
+  lastError: string | null;
+  hasSession: boolean;
+  config: WaConfig;
+}

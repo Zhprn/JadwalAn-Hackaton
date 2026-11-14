@@ -229,7 +229,7 @@ function LiveChatPage() {
               )}
 
               <MessageList messages={detail.data!.messages} onOpenBooking={setBookingId} />
-              <Composer sessionId={s.id} status={s.status} onSent={refresh} />
+              <Composer sessionId={s.id} status={s.status} channel={s.channel} onSent={refresh} />
             </>
           )}
         </div>
@@ -384,12 +384,13 @@ function Bubble({ m, onOpenBooking }: { m: ChatMessage; onOpenBooking: (id: stri
   );
 }
 
-function Composer({ sessionId, status, onSent }: { sessionId: string; status: string; onSent: () => void }) {
+function Composer({ sessionId, status, channel, onSent }: { sessionId: string; status: string; channel: string; onSent: () => void }) {
   const [text, setText] = useState("");
   const { data: replies } = useQuery({ queryKey: ["quick-replies"], queryFn: chatApi.quickReplies, staleTime: 5 * 60_000 });
   const send = useMutation({
     mutationFn: (msg: string) => chatApi.send(sessionId, msg),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.deliveryError) toast.warning(res.deliveryError);
       setText("");
       onSent();
     },
@@ -427,7 +428,13 @@ function Composer({ sessionId, status, onSent }: { sessionId: string; status: st
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), submit())}
-          placeholder={status === "ai_pilot" ? "Balas untuk mengambil alih dari AI… (ketik / untuk quick reply)" : "Tulis balasan… (ketik / untuk quick reply)"}
+          placeholder={
+            channel === "whatsapp"
+              ? "Balasan dikirim langsung ke WhatsApp pelanggan… (ketik / untuk quick reply)"
+              : status === "ai_pilot"
+                ? "Balas untuk mengambil alih dari AI… (ketik / untuk quick reply)"
+                : "Tulis balasan… (ketik / untuk quick reply)"
+          }
           aria-label="Tulis balasan"
           className="flex-1 bg-transparent text-sm py-1.5 outline-none text-slate-700 placeholder:text-slate-400"
         />

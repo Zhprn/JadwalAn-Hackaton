@@ -12,6 +12,7 @@ import promoMessageRoutes from './promoMessage.routes';
 import dashboardRoutes from './dashboard.routes';
 import reviewRoutes from './review.routes';
 import systemRoutes from './system.routes';
+import whatsappRoutes from './whatsapp.routes';
 import { isAiConfigured } from '../services/ai/gemini';
 import prisma from '../lib/prisma';
 
@@ -58,6 +59,7 @@ router.use('/ai', aiRoutes);
 router.use('/promo-messages', promoMessageRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/reviews', reviewRoutes);
+router.use('/whatsapp', whatsappRoutes);
 router.use('/', systemRoutes); // /notifications, /activity-logs
 
 export default router;

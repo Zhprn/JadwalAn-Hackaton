@@ -4,6 +4,7 @@ import { badRequest, conflict, notFound } from '../lib/http';
 import { logActivity, notifyAdmins } from '../lib/activity';
 import { addDays, addMinutes, formatJkt, jktDate, jktParts, minutesToTime, timeToMinutes } from '../lib/time';
 import { getStoreSetting, StoreSettingData } from './settings.service';
+import { notifyBookingWa } from './notify.service';
 
 // ---------------------------------------------------------------------
 // Konstanta
@@ -420,6 +421,8 @@ export const createBooking = async (input: CreateBookingInput) => {
     logActivity('booking.create', 'Booking', booking.id, { source: input.source, status }, input.createdById),
   ]);
 
+  if (status === 'confirmed') void notifyBookingWa(booking.id, 'confirmed');
+
   return { booking, promoWarning: input.promoCode && quote.promoError ? quote.promoError : null };
 };
 
@@ -511,6 +514,8 @@ export const updateBookingStatus = async (
   });
 
   if (next === 'completed') await recalcCustomerStats(current.customerId);
+  // Kabari pelanggan lewat WhatsApp (jika terhubung).
+  if (next === 'confirmed' || next === 'cancelled') void notifyBookingWa(id, next);
 
   if (next === 'cancelled' && opts.actor !== 'admin') {
     await notifyAdmins(

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { badRequest, notFound, pageMeta, paginate, param } from '../lib/http';
 import { logActivity } from '../lib/activity';
+import { outbound } from '../lib/outbound';
 import { generatePromoCopy, type Tone } from '../services/ai/business';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
@@ -149,22 +150,61 @@ export const update = async (req: AuthRequest, res: Response): Promise<any> => {
   res.json({ success: true, data: row });
 };
 
-/**
- * POST /promo-messages/:id/send — tandai terkirim & kembalikan link wa.me.
- * (Belum ada integrasi WhatsApp API, jadi admin mengirim lewat link ini.)
- */
-export const send = async (req: AuthRequest, res: Response): Promise<any> => {
-  const msg = await prisma.promoMessage.findUnique({ where: { id: param(req, 'id') }, include: { customer: true } });
+/** Kirim satu pesan promo. WhatsApp terhubung → terkirim otomatis; jika tidak → status sent + link wa.me manual. */
+const deliverPromo = async (id: string, adminId?: string) => {
+  const msg = await prisma.promoMessage.findUnique({ where: { id }, include: { customer: true } });
   if (!msg) throw notFound('Pesan promo tidak ditemukan');
   if (msg.customer.optOutPromo) throw badRequest('Pelanggan memilih tidak menerima promo');
 
+  let sentVia: 'whatsapp' | 'link' = 'link';
+  let errorMessage: string | null = null;
+  if (outbound.whatsapp && outbound.isWhatsAppReady()) {
+    try {
+      await outbound.whatsapp(msg.customer.whatsapp, msg.content);
+      sentVia = 'whatsapp';
+    } catch (e) {
+      errorMessage = (e as Error).message;
+    }
+  }
+
   const now = new Date();
+  const failed = errorMessage !== null;
   const [row] = await prisma.$transaction([
-    prisma.promoMessage.update({ where: { id: msg.id }, data: { status: 'sent', sentAt: now, channel: 'whatsapp' } }),
-    prisma.customer.update({ where: { id: msg.customerId }, data: { lastPromoSentAt: now } }),
+    prisma.promoMessage.update({
+      where: { id: msg.id },
+      data: failed ? { status: 'failed', errorMessage } : { status: 'sent', sentAt: now, channel: 'whatsapp', errorMessage: null },
+    }),
+    ...(failed ? [] : [prisma.customer.update({ where: { id: msg.customerId }, data: { lastPromoSentAt: now } })]),
   ]);
-  await logActivity('promo_message.send', 'PromoMessage', msg.id, { customerId: msg.customerId }, req.user?.id);
-  res.json({ success: true, data: { ...row, waLink: waLink(msg.customer.whatsapp, msg.content) } });
+  await logActivity('promo_message.send', 'PromoMessage', msg.id, { customerId: msg.customerId, sentVia, errorMessage }, adminId);
+  return { ...row, sentVia, waLink: sentVia === 'link' ? waLink(msg.customer.whatsapp, msg.content) : undefined };
+};
+
+/**
+ * POST /promo-messages/:id/send — kirim otomatis lewat WhatsApp yang terhubung.
+ * Jika WhatsApp belum terhubung, dikembalikan waLink untuk dikirim manual.
+ */
+export const send = async (req: AuthRequest, res: Response): Promise<any> => {
+  const result = await deliverPromo(param(req, 'id'), req.user?.id);
+  if (result.status === 'failed') return res.status(502).json({ success: false, message: `Gagal kirim WhatsApp: ${result.errorMessage}`, data: result });
+  res.json({ success: true, data: result });
+};
+
+/**
+ * POST /promo-messages/send-bulk — kirim banyak draft lewat WhatsApp di latar belakang,
+ * dengan jeda acak 4–9 detik antar pesan (mengurangi risiko nomor diblokir).
+ */
+export const sendBulk = async (req: AuthRequest, res: Response): Promise<any> => {
+  const { ids } = z.object({ ids: z.array(z.string().uuid()).min(1).max(50) }).parse(req.body);
+  if (!outbound.isWhatsAppReady()) throw badRequest('WhatsApp belum terhubung. Hubungkan dulu di Pengaturan → WhatsApp.');
+  const adminId = req.user?.id;
+  void (async () => {
+    for (const [i, id] of ids.entries()) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 4000 + Math.random() * 5000));
+      await deliverPromo(id, adminId).catch((e) => console.error('[promo] gagal kirim', id, (e as Error).message));
+    }
+  })();
+  res.status(202).json({ success: true, data: { queued: ids.length, estimatedSeconds: Math.round(ids.length * 6.5) } });
 };
 
 export const remove = async (req: AuthRequest, res: Response): Promise<any> => {

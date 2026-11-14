@@ -10,6 +10,7 @@ import { apiReference } from '@scalar/express-api-reference';
 import apiRoutes from './routes';
 import { errorMiddleware, notFoundMiddleware } from './lib/http';
 import { startScheduler } from './jobs/scheduler';
+import { autoStartWhatsApp } from './services/whatsapp.service';
 import prisma from './lib/prisma';
 
 // Supabase pooler hanya mendukung IPv4
@@ -89,6 +90,7 @@ const server = app.listen(PORT, () => {
   console.log(`Server nyala di http://localhost:${PORT}`);
   console.log(`Docs di http://localhost:${PORT}/reference`);
   startScheduler();
+  void autoStartWhatsApp();
 });
 
 const shutdown = async () => {

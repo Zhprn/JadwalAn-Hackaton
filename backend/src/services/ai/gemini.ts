@@ -18,7 +18,7 @@ export const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'
 /** Model ringan & cepat untuk router, ringkasan, klasifikasi. */
 export const FAST_MODEL = process.env.GEMINI_FAST_MODEL || DEFAULT_MODEL;
 /** Dipakai otomatis jika model utama tidak tersedia / overload. */
-export const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.5-flash';
+export const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
 
 const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 25_000);
 

@@ -2,6 +2,7 @@ import { addDays, todayJkt } from '../lib/time';
 import { autoCompleteBookings, expirePendingBookings, markNoShows } from '../services/booking.service';
 import { expireStalePayments } from '../services/payment.service';
 import { computeRangeMetrics, persistMetrics } from '../services/metric.service';
+import { sendDueReminders } from '../services/notify.service';
 
 /**
  * Job latar belakang sederhana berbasis setInterval (cukup untuk satu instance server).
@@ -26,8 +27,9 @@ const bookingTick = safe('booking', async () => {
     const expired = await expirePendingBookings();
     const completed = await autoCompleteBookings();
     const noShows = await markNoShows();
-    if (expiredPayments || expired || completed || noShows) {
-      console.log(`[job] payment expired ${expiredPayments}, booking expired ${expired}, completed ${completed}, no-show ${noShows}`);
+    const reminders = await sendDueReminders();
+    if (expiredPayments || expired || completed || noShows || reminders) {
+      console.log(`[job] payment expired ${expiredPayments}, booking expired ${expired}, completed ${completed}, no-show ${noShows}, pengingat WA ${reminders}`);
     }
   } finally {
     running = false;

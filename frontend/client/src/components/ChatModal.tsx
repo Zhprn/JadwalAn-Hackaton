@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { X, Bot, Headphones, Send, Maximize2, Minimize2, CalendarDays, ArrowUpRight, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/auth";
-import { chatApi } from "@/services/api";
+import { chatApi, publicApi } from "@/services/api";
+import { useQuery } from "@tanstack/react-query";
 import { errorMessage } from "@/lib/api-client";
 import { fmtDateLong, fmtRange, fmtTime, rupiah } from "@/lib/format";
 import { StatusPill } from "./ui-bits";
@@ -25,6 +26,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const { data: wa } = useQuery({ queryKey: ["whatsapp-public"], queryFn: publicApi.whatsapp, enabled: isOpen, staleTime: 60_000 });
 
   const handleClose = () => {
     onClose();
@@ -143,6 +145,17 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {wa?.connected && wa.phone && (
+            <a
+              href={`https://wa.me/${wa.phone}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg mr-1"
+              title="Lanjutkan chat di WhatsApp — AI juga membalas di sana"
+            >
+              WhatsApp
+            </a>
+          )}
           <button
             type="button"
             onClick={() => setIsExpanded((v) => !v)}

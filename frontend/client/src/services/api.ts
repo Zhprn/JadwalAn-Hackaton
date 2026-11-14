@@ -26,6 +26,7 @@ export const publicApi = {
   promos: () => apiClient.get<Promo[]>("/promos?isPublic=true&isActive=true&valid=true"),
   availability: (date: string, category?: string) => apiClient.get<Availability>(`/bookings/availability${qs({ date, category })}`),
   reviews: (q: Q = {}) => apiClient.page<Review>(`/reviews${qs(q)}`),
+  whatsapp: () => apiClient.get<{ connected: boolean; phone: string | null; aiReply: boolean }>("/whatsapp/public"),
 };
 
 export type CreateBookingInput = {

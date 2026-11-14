@@ -26,6 +26,7 @@ function ProfilPage() {
   const qc = useQueryClient();
   const me = useQuery({ queryKey: ["me"], queryFn: authApi.me });
   const settings = useQuery({ queryKey: ["settings"], queryFn: publicApi.settings });
+  const wa = useQuery({ queryKey: ["whatsapp-public"], queryFn: publicApi.whatsapp, staleTime: 60_000 });
   const [modal, setModal] = useState<"edit" | "password" | null>(null);
 
   const c = me.data;
@@ -161,6 +162,16 @@ function ProfilPage() {
             >
               <MessageSquare className="w-4 h-4" /> Hubungi kami
             </button>
+            {wa.data?.connected && wa.data.phone && (
+              <a
+                href={`https://wa.me/${wa.data.phone}`}
+                target="_blank"
+                rel="noreferrer"
+                className="-mt-2 bg-emerald-600 text-white font-bold text-sm px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" /> Chat via WhatsApp
+              </a>
+            )}
             <p className="text-[10px] text-slate-400 font-medium">Admin online • {settings.data ? `${settings.data.openTime} - ${settings.data.closeTime}` : "jam buka"} WIB</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-3xl p-2 flex flex-col">

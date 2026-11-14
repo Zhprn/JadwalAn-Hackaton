@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTargets, generate, generateBulk, regenerate, list, update, send, remove, stats } from '../controllers/promoMessage.controller';
+import { getTargets, generate, generateBulk, regenerate, list, update, send, sendBulk, remove, stats } from '../controllers/promoMessage.controller';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware';
 import { aiRateLimiter } from '../middlewares/rateLimiter';
 
@@ -135,5 +135,26 @@ router.patch('/:id', update);
 router.delete('/:id', remove);
 router.post('/:id/regenerate', aiRateLimiter, regenerate);
 router.post('/:id/send', send);
+
+/**
+ * @openapi
+ * /api/promo-messages/send-bulk:
+ *   post:
+ *     summary: Kirim banyak draft promo lewat WhatsApp (latar belakang, jeda acak 4–9 detik)
+ *     tags: [AI Promo CRM]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [ids]
+ *             properties:
+ *               ids: { type: array, items: { type: string } }
+ *     responses:
+ *       202: { description: Diantrikan }
+ */
+router.post('/send-bulk', sendBulk);
 
 export default router;

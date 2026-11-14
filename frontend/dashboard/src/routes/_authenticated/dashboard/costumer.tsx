@@ -1,16 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Download, Users, Heart, UserCheck, Search, Sparkles, X, RefreshCcw, Send, Copy, Loader2, Brain, Wand2 } from "lucide-react";
+import { Download, Users, Heart, UserCheck, Search, Sparkles, X, RefreshCcw, Send, Copy, Loader2, Brain, Wand2, Megaphone } from "lucide-react";
 import { toast } from "sonner";
-import { aiApi, customerApi, promoApi, promoMessageApi } from "@/services/api";
+import { aiApi, customerApi, promoApi, promoMessageApi, whatsappApi } from "@/services/api";
 import { Avatar, EmptyState, Pagination, SkeletonRows, TierBadge, inputCls, textareaCls } from "@/components/common";
 import { errorMessage } from "@/lib/api-client";
 import { formatWa, relativeTime, rupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Customer, PromoMessage, Tier } from "@/types";
+import type { Customer, PromoMessage, PromoTarget, Tier } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/dashboard/costumer")({
   component: CustomerPage,
@@ -141,6 +141,8 @@ function CustomerPage() {
               ))}
             </div>
           </div>
+
+          {tab === "comeback" && <BulkCampaign targets={targets.data ?? []} />}
 
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
@@ -285,14 +287,21 @@ function PromoGenerator({ customer, onClose }: { customer: Selected | null; onCl
     onSuccess: onDraft,
     onError: (e) => toast.error(errorMessage(e)),
   });
+  const { data: wa } = useQuery({ queryKey: ["whatsapp", "status"], queryFn: whatsappApi.status, retry: 0 });
+  const waReady = wa?.status === "connected";
+
   const send = useMutation({
     mutationFn: async () => {
       if (draft && content !== draft.content) await promoMessageApi.update(draft.id, { content });
       return promoMessageApi.send(draft!.id);
     },
     onSuccess: (res) => {
-      if (res.waLink) window.open(res.waLink, "_blank", "noopener");
-      toast.success("Ditandai terkirim — WhatsApp dibuka di tab baru");
+      if (res.sentVia === "whatsapp") {
+        toast.success(`Promo terkirim otomatis ke WhatsApp ${customer?.name ?? ""}`);
+      } else {
+        if (res.waLink) window.open(res.waLink, "_blank", "noopener");
+        toast.success("Ditandai terkirim — WhatsApp Web dibuka di tab baru");
+      }
       setDraft(null);
       setContent("");
       qc.invalidateQueries({ queryKey: ["promo-messages"] });
@@ -438,7 +447,7 @@ function PromoGenerator({ customer, onClose }: { customer: Selected | null; onCl
                 disabled={send.isPending || !content.trim()}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
               >
-                {send.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Kirim via WA Web
+                {send.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {waReady ? "Kirim otomatis via WhatsApp" : "Kirim via WA Web (manual)"}
               </button>
               <button
                 type="button"
@@ -448,10 +457,123 @@ function PromoGenerator({ customer, onClose }: { customer: Selected | null; onCl
                 <Copy className="w-4 h-4" /> Salin teks
               </button>
             </div>
-            <p className="text-center text-[11px] font-medium text-gray-400">Tinjau draf sebelum membuka WhatsApp Web.</p>
+            <p className="text-center text-[11px] font-medium text-gray-400">
+              {waReady ? (
+                `Dikirim dari WhatsApp ${formatWa(wa?.phone)} — tinjau draf dulu.`
+              ) : (
+                <>
+                  WhatsApp belum terhubung.{" "}
+                  <Link to="/dashboard/settings" search={{ tab: "whatsapp" }} className="text-emerald-600 font-semibold hover:underline">
+                    Scan QR
+                  </Link>{" "}
+                  agar promo terkirim otomatis.
+                </>
+              )}
+            </p>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Kampanye comeback massal: AI menulis draft untuk N pelanggan lalu dikirim otomatis via WhatsApp. */
+function BulkCampaign({ targets }: { targets: PromoTarget[] }) {
+  const qc = useQueryClient();
+  const [count, setCount] = useState(10);
+  const [tone, setTone] = useState("friendly");
+  const [promoId, setPromoId] = useState("");
+  const [progress, setProgress] = useState<string | null>(null);
+  const { data: wa } = useQuery({ queryKey: ["whatsapp", "status"], queryFn: whatsappApi.status, retry: 0 });
+  const { data: promos } = useQuery({ queryKey: ["promos", "valid"], queryFn: () => promoApi.list({ isActive: true, valid: true }) });
+  const waReady = wa?.status === "connected";
+  const n = Math.min(count, targets.length, 30);
+
+  const run = useMutation({
+    mutationFn: async () => {
+      const chosen = targets.slice(0, n).map((t) => t.id);
+      setProgress(`AI menulis ${chosen.length} pesan personal…`);
+      const drafts = await promoMessageApi.generateBulk({ customerIds: chosen, promoId: promoId || null, tone });
+      const ids = drafts.filter((d) => d.ok && d.id).map((d) => d.id!);
+      if (!ids.length) throw new Error("AI gagal membuat draft. Cek GEMINI_API_KEY.");
+      setProgress(`Mengantrikan ${ids.length} pesan ke WhatsApp…`);
+      return promoMessageApi.sendBulk(ids);
+    },
+    onSuccess: (res) => {
+      toast.success(`${res.queued} promo sedang dikirim bertahap (±${Math.ceil(res.estimatedSeconds / 60)} menit)`);
+      qc.invalidateQueries({ queryKey: ["promo-messages"] });
+      qc.invalidateQueries({ queryKey: ["promo-targets"] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+    onSettled: () => setProgress(null),
+  });
+
+  return (
+    <div className="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 flex flex-col lg:flex-row lg:items-end gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <Megaphone className="w-4 h-4 text-emerald-600" /> Kampanye comeback otomatis
+        </p>
+        <p className="text-xs text-gray-600 mt-0.5">
+          {targets.length} pelanggan absen ≥14 hari, tidak menolak promo, dan belum dikirimi promo 7 hari terakhir. AI menulis pesan berbeda untuk tiap orang, lalu dikirim bertahap dengan jeda acak.
+        </p>
+        {progress && (
+          <p className="text-xs font-semibold text-emerald-700 mt-1 flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> {progress}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2 items-end">
+        <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+          Jumlah
+          <select className={`${inputCls} w-24`} value={count} onChange={(e) => setCount(Number(e.target.value))}>
+            {[5, 10, 20, 30].map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+          Promo
+          <select className={`${inputCls} w-36`} value={promoId} onChange={(e) => setPromoId(e.target.value)}>
+            <option value="">Tanpa kode</option>
+            {promos?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.code}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+          Gaya
+          <select className={`${inputCls} w-32`} value={tone} onChange={(e) => setTone(e.target.value)}>
+            {TONES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={!waReady || !n || run.isPending}
+          onClick={() => confirm(`Kirim promo AI ke ${n} pelanggan lewat WhatsApp?`) && run.mutate()}
+          title={waReady ? undefined : "Hubungkan WhatsApp dulu di Pengaturan"}
+          className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+        >
+          {run.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Kirim ke {n}
+        </button>
+      </div>
+      {!waReady && (
+        <p className="text-[11px] text-gray-500 lg:hidden">
+          WhatsApp belum terhubung —{" "}
+          <Link to="/dashboard/settings" search={{ tab: "whatsapp" }} className="text-emerald-700 font-semibold">
+            scan QR
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 }

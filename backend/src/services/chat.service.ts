@@ -2,6 +2,7 @@ import { ChatSession, Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { badRequest, forbidden, notFound } from '../lib/http';
 import { notifyAdmins } from '../lib/activity';
+import { outbound } from '../lib/outbound';
 import { getAgentConfig, isWithinActiveHours } from './ai/context';
 import { runChatTurn, summarizeSession, type HistoryItem } from './ai/orchestrator';
 
@@ -22,10 +23,13 @@ const addSystemMessage = (sessionId: string, message: string) =>
 // Sesi
 // ---------------------------------------------------------------------
 
-/** Ambil sesi aktif pelanggan atau buat baru (dengan sapaan AI). */
-export const getOrCreateCustomerSession = async (customerId: string, channel = 'web') => {
+/**
+ * Ambil sesi aktif pelanggan di channel tertentu atau buat baru (dengan sapaan AI).
+ * silentGreeting: jangan simpan sapaan (WhatsApp — AI langsung menjawab pesan pertama).
+ */
+export const getOrCreateCustomerSession = async (customerId: string, channel = 'web', opts: { silentGreeting?: boolean } = {}) => {
   const existing = await prisma.chatSession.findFirst({
-    where: { customerId, status: { not: 'closed' } },
+    where: { customerId, channel, status: { not: 'closed' } },
     orderBy: { updatedAt: 'desc' },
     include: sessionInclude,
   });
@@ -38,7 +42,7 @@ export const getOrCreateCustomerSession = async (customerId: string, channel = '
   });
   await addEvent(session.id, 'created');
 
-  if (config.isActive && config.greetingMessage) {
+  if (config.isActive && config.greetingMessage && !opts.silentGreeting) {
     await prisma.chatMessage.create({ data: { sessionId: session.id, sender: 'ai', message: config.greetingMessage } });
     await prisma.chatSession.update({
       where: { id: session.id },
@@ -87,7 +91,7 @@ const loadHistory = async (sessionId: string, beforeId: string): Promise<History
   return rows.reverse().map((m) => ({ role: m.sender === 'customer' ? 'user' : 'model', text: m.message }));
 };
 
-export const handleCustomerMessage = async (sessionId: string, customerId: string, text: string) => {
+export const handleCustomerMessage = async (sessionId: string, customerId: string, text: string, opts: { externalId?: string } = {}) => {
   const message = text.trim();
   if (!message) throw badRequest('Pesan tidak boleh kosong');
 
@@ -100,7 +104,8 @@ export const handleCustomerMessage = async (sessionId: string, customerId: strin
     await addEvent(sessionId, 'reopened', 'Dibuka kembali oleh pelanggan');
   }
 
-  const customerMessage = await prisma.chatMessage.create({ data: { sessionId, sender: 'customer', message } });
+  // externalId (id pesan WhatsApp) unik → event ganda dari WA otomatis ditolak.
+  const customerMessage = await prisma.chatMessage.create({ data: { sessionId, sender: 'customer', message, externalId: opts.externalId ?? null } });
   const isFirstCustomerMessage = !session.lastSender || (session.lastSender === 'ai' && !session.title);
 
   session = await prisma.chatSession.update({
@@ -317,7 +322,21 @@ export const sendAdminMessage = async (
       unreadByAdmin: 0,
     },
   });
-  return { session, message: msg };
+
+  // Sesi dari WhatsApp → balasan admin diteruskan ke WhatsApp pelanggan.
+  let deliveryError: string | null = null;
+  if (session.channel === 'whatsapp') {
+    const customer = await prisma.customer.findUnique({ where: { id: session.customerId }, select: { whatsapp: true } });
+    try {
+      if (!outbound.whatsapp || !outbound.isWhatsAppReady()) throw new Error('WhatsApp belum terhubung');
+      await outbound.whatsapp(customer!.whatsapp, input.message);
+      await prisma.chatMessage.update({ where: { id: msg.id }, data: { status: 'delivered' } });
+    } catch (e) {
+      deliveryError = `Pesan tersimpan, tapi gagal dikirim ke WhatsApp: ${(e as Error).message}`;
+      await prisma.chatMessage.update({ where: { id: msg.id }, data: { status: 'failed' } });
+    }
+  }
+  return { session, message: msg, deliveryError };
 };
 
 export const markSessionRead = async (sessionId: string, reader: 'admin' | 'customer') => {

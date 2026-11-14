@@ -1,10 +1,10 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, ChevronRight, Home, LogOut, Settings, CheckCheck } from "lucide-react";
+import { Bell, ChevronDown, ChevronRight, Home, LogOut, Settings, CheckCheck, MessageCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/auth";
-import { notificationApi } from "@/services/api";
+import { notificationApi, whatsappApi } from "@/services/api";
 import { initials, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,7 @@ export default function Topbar({ onLogout }: { onLogout: () => void }) {
     refetchInterval: 20_000,
   });
   const unread = Number(notif?.meta?.unread ?? 0);
+  const { data: wa } = useQuery({ queryKey: ["whatsapp", "status"], queryFn: whatsappApi.status, refetchInterval: 30_000, retry: 0 });
 
   const readAll = useMutation({
     mutationFn: notificationApi.readAll,
@@ -74,6 +75,22 @@ export default function Topbar({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="flex items-center h-full gap-3">
+        {/* Status WhatsApp */}
+        {wa && (
+          <Link
+            to="/dashboard/settings"
+            search={{ tab: "whatsapp" } as never}
+            title={wa.status === "connected" ? `WhatsApp terhubung (${wa.phone})` : "WhatsApp belum terhubung — klik untuk scan QR"}
+            className={cn(
+              "hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
+              wa.status === "connected" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+            )}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            {wa.status === "connected" ? "WA aktif" : wa.status === "qr" ? "WA menunggu scan" : "WA terputus"}
+          </Link>
+        )}
+
         {/* Notifikasi */}
         <Popover>
           <PopoverTrigger asChild>

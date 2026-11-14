@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Store, Gamepad2, ShieldCheck, UserCog, Plus, Pencil, Trash2, Wrench } from "lucide-react";
+import { Store, Gamepad2, ShieldCheck, UserCog, Plus, Pencil, Trash2, Wrench, MessageCircle } from "lucide-react";
+import { WhatsAppPanel } from "@/components/whatsapp-panel";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, Btn, Card, EmptyState, Field, PageHeader, Spinner, Toggle, inputCls, textareaCls } from "@/components/common";
@@ -12,12 +13,12 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth";
 import type { Station, StoreSetting } from "@/types";
 
-type Tab = "rental" | "unit" | "admin" | "akun";
+type Tab = "rental" | "unit" | "whatsapp" | "admin" | "akun";
 type SettingsSearch = { tab?: Tab };
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   validateSearch: (s: Record<string, unknown>): SettingsSearch => ({
-    tab: ["rental", "unit", "admin", "akun"].includes(String(s.tab)) ? (s.tab as Tab) : undefined,
+    tab: ["rental", "unit", "whatsapp", "admin", "akun"].includes(String(s.tab)) ? (s.tab as Tab) : undefined,
   }),
   component: SettingsPage,
 });
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 const TABS = [
   { key: "rental", label: "Rental", icon: Store },
   { key: "unit", label: "Unit PS", icon: Gamepad2 },
+  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   { key: "admin", label: "Admin", icon: ShieldCheck },
   { key: "akun", label: "Akun saya", icon: UserCog },
 ] as const;
@@ -36,7 +38,7 @@ function SettingsPage() {
   const navigate = Route.useNavigate();
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      <PageHeader title="Pengaturan" subtitle="Atur jam operasional, unit PlayStation, dan akun admin." />
+      <PageHeader title="Pengaturan" subtitle="Atur jam operasional, unit PlayStation, koneksi WhatsApp, dan akun admin." />
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
         {TABS.map((t) => (
           <button
@@ -51,6 +53,7 @@ function SettingsPage() {
       </div>
       {tab === "rental" && <RentalTab />}
       {tab === "unit" && <UnitTab />}
+      {tab === "whatsapp" && <WhatsAppPanel />}
       {tab === "admin" && <AdminTab />}
       {tab === "akun" && <AccountTab />}
     </div>

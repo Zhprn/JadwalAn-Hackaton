@@ -2,3 +2,6 @@ node_modules
 dist
 .env
 *.log
+
+# Sesi WhatsApp (berisi kunci login perangkat — JANGAN di-commit)
+.wa-session

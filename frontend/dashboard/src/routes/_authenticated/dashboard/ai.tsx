@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, BookOpen, FlaskConical, Activity, Plus, Pencil, Trash2, Send, Zap, CheckCircle2, AlertTriangle, Loader2, RotateCcw } from "lucide-react";
+import { Bot, BookOpen, Activity, Plus, Pencil, Trash2, Zap, CheckCircle2, AlertTriangle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Btn, Card, EmptyState, Field, PageHeader, Pagination, Spinner, Toggle, inputCls, textareaCls } from "@/components/common";
@@ -9,13 +9,13 @@ import { aiApi } from "@/services/api";
 import { errorMessage } from "@/lib/api-client";
 import { fmtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { AiAgent, AiKnowledge, PlaygroundResult } from "@/types";
+import type { AiAgent, AiKnowledge } from "@/types";
 
-type AiSearch = { tab?: "agent" | "knowledge" | "playground" | "logs" };
+type AiSearch = { tab?: "agent" | "knowledge" | "logs" };
 
 export const Route = createFileRoute("/_authenticated/dashboard/ai")({
   validateSearch: (s: Record<string, unknown>): AiSearch => ({
-    tab: ["agent", "knowledge", "playground", "logs"].includes(String(s.tab)) ? (s.tab as AiSearch["tab"]) : undefined,
+    tab: ["agent", "knowledge", "logs"].includes(String(s.tab)) ? (s.tab as AiSearch["tab"]) : undefined,
   }),
   component: AiPage,
 });
@@ -23,7 +23,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/ai")({
 const TABS = [
   { key: "agent", label: "Agent", icon: Bot },
   { key: "knowledge", label: "Basis pengetahuan", icon: BookOpen },
-  { key: "playground", label: "Playground", icon: FlaskConical },
   { key: "logs", label: "Log & statistik", icon: Activity },
 ] as const;
 
@@ -103,7 +102,6 @@ function AiPage() {
 
       {tab === "agent" && <AgentTab />}
       {tab === "knowledge" && <KnowledgeTab />}
-      {tab === "playground" && <PlaygroundTab />}
       {tab === "logs" && <LogsTab />}
     </div>
   );
@@ -204,8 +202,7 @@ function AgentForm({ agent }: { agent: AiAgent }) {
           <input className={`${inputCls} font-mono`} value={f.model} onChange={(e) => set("model", e.target.value)} list="gemini-models" />
           <datalist id="gemini-models">
             <option value="gemini-3.5-flash-lite" />
-            <option value="gemini-2.5-flash" />
-            <option value="gemini-2.5-flash-lite" />
+            <option value="gemini-3.8-flash" />
             <option value="gemini-2.5-pro" />
           </datalist>
         </Field>
@@ -438,104 +435,6 @@ function KnowledgeForm({ item, onClose }: { item: AiKnowledge | "new" | null; on
 
 // ===================================================================== Playground
 
-type PlayMsg = { role: "user" | "model"; text: string; meta?: PlaygroundResult };
-
-function PlaygroundTab() {
-  const [msgs, setMsgs] = useState<PlayMsg[]>([]);
-  const [text, setText] = useState("");
-  const [lastIntent, setLastIntent] = useState<string | undefined>();
-  const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [msgs.length]);
-
-  const run = useMutation({
-    mutationFn: (message: string) => aiApi.playground(message, msgs.map(({ role, text }) => ({ role, text })), lastIntent),
-    onSuccess: (res) => {
-      setMsgs((m) => [...m, { role: "model", text: res.reply, meta: res }]);
-      setLastIntent(res.intent);
-    },
-    onError: (e) => toast.error(errorMessage(e)),
-  });
-
-  const submit = (preset?: string) => {
-    const msg = (preset ?? text).trim();
-    if (!msg || run.isPending) return;
-    setMsgs((m) => [...m, { role: "user", text: msg }]);
-    setText("");
-    run.mutate(msg);
-  };
-
-  return (
-    <Card className="flex flex-col h-[620px]">
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800">Playground chatbot</h2>
-          <p className="text-sm text-slate-500">Mode uji — booking & pembatalan tidak benar-benar dibuat.</p>
-        </div>
-        <Btn variant="ghost" size="sm" onClick={() => (setMsgs([]), setLastIntent(undefined))}>
-          <RotateCcw className="w-3.5 h-3.5" /> Reset
-        </Btn>
-      </div>
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50">
-        {!msgs.length && (
-          <div className="flex flex-wrap gap-2 justify-center pt-10">
-            {["Halo, ada promo apa hari ini?", "Besok jam 4 sore PS5 kosong? Mau 2 jam", "Harga PS4 berapa per jam?", "Kemarin stiknya rusak, saya kecewa"].map((p) => (
-              <button key={p} type="button" onClick={() => submit(p)} className="text-xs font-semibold text-violet-700 border border-violet-100 bg-white px-3 py-2 rounded-full hover:bg-violet-50">
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-        {msgs.map((m, i) =>
-          m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <div className="bg-indigo-600 text-white text-sm rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[75%] whitespace-pre-wrap">{m.text}</div>
-            </div>
-          ) : (
-            <div key={i} className="flex flex-col gap-1 max-w-[80%]">
-              <div className="bg-violet-50 border border-violet-100 text-violet-950 text-sm rounded-2xl rounded-tl-sm px-4 py-2.5 whitespace-pre-wrap">{m.text}</div>
-              {m.meta && (
-                <div className="flex flex-wrap gap-1.5 text-[10px] font-semibold">
-                  <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-700">agent: {m.meta.agent}</span>
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">router: {m.meta.routedBy}</span>
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">intent: {m.meta.intent}</span>
-                  {m.meta.toolCalls.map((t, j) => (
-                    <span key={j} className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
-                      {t.name} {t.ms}ms
-                    </span>
-                  ))}
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                    {(m.meta.latencyMs / 1000).toFixed(1)} dtk · {m.meta.usage.promptTokens + m.meta.usage.completionTokens} token
-                  </span>
-                  {m.meta.handoff && <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700">handoff ke admin</span>}
-                  {m.meta.error && <span className="px-2 py-0.5 rounded bg-red-50 text-red-600">{m.meta.error}</span>}
-                </div>
-              )}
-            </div>
-          ),
-        )}
-        {run.isPending && (
-          <div className="flex items-center gap-2 text-xs text-violet-600">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> AI sedang berpikir…
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-      <div className="p-4 border-t border-gray-100 flex gap-2">
-        <input
-          className={inputCls}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="Tulis pesan uji seperti pelanggan…"
-          aria-label="Pesan uji"
-        />
-        <Btn variant="ai" onClick={() => submit()} disabled={!text.trim()} loading={run.isPending}>
-          <Send className="w-4 h-4" /> Kirim
-        </Btn>
-      </div>
-    </Card>
-  );
-}
 
 // ===================================================================== Logs
 

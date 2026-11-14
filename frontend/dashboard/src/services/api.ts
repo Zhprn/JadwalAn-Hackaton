@@ -22,6 +22,8 @@ import type {
   ScheduleData,
   Station,
   StoreSetting,
+  WaConfig,
+  WaStatus,
 } from "@/types";
 
 type Q = Record<string, string | number | boolean | undefined | null>;
@@ -132,7 +134,8 @@ export const chatApi = {
   sessions: (q: Q = {}) => apiClient.page<ChatSession>(`/chat/admin/sessions${qs(q)}`),
   session: (id: string) => apiClient.get<{ session: ChatSession; messages: ChatMessage[] }>(`/chat/admin/sessions/${id}`),
   messagesAfter: (id: string, after?: string) => apiClient.get<ChatMessage[]>(`/chat/sessions/${id}/messages${qs({ after, limit: 100 })}`),
-  send: (id: string, message: string) => apiClient.post<{ message: ChatMessage }>(`/chat/admin/sessions/${id}/messages`, { message }),
+  send: (id: string, message: string) =>
+    apiClient.post<{ message: ChatMessage; deliveryError: string | null }>(`/chat/admin/sessions/${id}/messages`, { message }),
   action: (id: string, action: "takeover" | "release" | "close" | "reopen") =>
     apiClient.post<ChatSession>(`/chat/admin/sessions/${id}/${action}`),
   read: (id: string) => apiClient.post(`/chat/sessions/${id}/read`),
@@ -168,7 +171,10 @@ export const promoMessageApi = {
   regenerate: (id: string, data: { tone?: string; instruction?: string } = {}) =>
     apiClient.post<PromoMessage>(`/promo-messages/${id}/regenerate`, data),
   update: (id: string, data: { content?: string; tags?: string[] }) => apiClient.patch<PromoMessage>(`/promo-messages/${id}`, data),
-  send: (id: string) => apiClient.post<PromoMessage>(`/promo-messages/${id}/send`),
+  send: (id: string) => apiClient.post<PromoMessage & { sentVia: "whatsapp" | "link" }>(`/promo-messages/${id}/send`),
+  sendBulk: (ids: string[]) => apiClient.post<{ queued: number; estimatedSeconds: number }>("/promo-messages/send-bulk", { ids }),
+  generateBulk: (data: { customerIds: string[]; promoId?: string | null; tone: string }) =>
+    apiClient.post<{ customerId: string; ok: boolean; id?: string; error?: string }[]>("/promo-messages/generate-bulk", data),
   remove: (id: string) => apiClient.delete(`/promo-messages/${id}`),
 };
 
@@ -177,4 +183,13 @@ export const notificationApi = {
   list: (q: Q = {}) => apiClient.page<Notification>(`/notifications${qs(q)}`),
   read: (id: string) => apiClient.patch(`/notifications/${id}/read`),
   readAll: () => apiClient.post("/notifications/read-all"),
+};
+
+// ---------------------------------------------------------------- WhatsApp
+export const whatsappApi = {
+  status: () => apiClient.get<WaStatus>("/whatsapp/status"),
+  connect: () => apiClient.post<WaStatus>("/whatsapp/connect"),
+  logout: () => apiClient.post<WaStatus>("/whatsapp/logout"),
+  config: (data: Partial<WaConfig>) => apiClient.put<WaConfig>("/whatsapp/config", data),
+  test: (to: string, message: string) => apiClient.post("/whatsapp/test", { to, message }),
 };
