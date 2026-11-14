@@ -1,5 +1,15 @@
 import { Router } from 'express';
-import { registerAdmin, loginAdmin, refreshToken, logoutAdmin, getMe, updateMe } from '../controllers/auth.controller';
+import {
+  registerAdmin,
+  loginAdmin,
+  refreshToken,
+  logoutAdmin,
+  getMe,
+  updateMe,
+  changePassword,
+  listAdmins,
+  setAdminStatus,
+} from '../controllers/auth.controller';
 import { loginRateLimiter } from '../middlewares/rateLimiter';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware';
 
@@ -141,5 +151,62 @@ router.get('/me', verifyToken, requireAdmin, getMe);
  *         description: Profil berhasil diperbarui
  */
 router.put('/edit', verifyToken, requireAdmin, updateMe);
+
+/**
+ * @openapi
+ * /api/auth/password:
+ *   put:
+ *     summary: Ganti password admin
+ *     tags: [Admin Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword: { type: string }
+ *               newPassword: { type: string, minLength: 6 }
+ *     responses:
+ *       200: { description: Password diubah }
+ */
+router.put('/password', verifyToken, requireAdmin, changePassword);
+
+/**
+ * @openapi
+ * /api/auth/admins:
+ *   get:
+ *     summary: Daftar semua admin
+ *     tags: [Admin Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Daftar admin }
+ */
+router.get('/admins', verifyToken, requireAdmin, listAdmins);
+
+/**
+ * @openapi
+ * /api/auth/admins/{id}/status:
+ *   patch:
+ *     summary: Aktifkan / nonaktifkan admin
+ *     tags: [Admin Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [isActive]
+ *             properties:
+ *               isActive: { type: boolean }
+ *     responses:
+ *       200: { description: Status admin diubah }
+ */
+router.patch('/admins/:id/status', verifyToken, requireAdmin, setAdminStatus);
 
 export default router;

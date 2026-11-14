@@ -32,7 +32,23 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
   }
 };
 
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): any => {
+/** Seperti verifyToken, tapi tidak menolak request tanpa token (req.user diisi jika token valid). */
+export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunction): any => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    if (!tokenBlacklist.has(token)) {
+      try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+      } catch {
+        // token tidak valid → perlakukan sebagai tamu
+      }
+    }
+  }
+  next();
+};
+
+export const requireAdmin =(req: AuthRequest, res: Response, next: NextFunction): any => {
   if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ success: false, message: 'Akses terlarang. Membutuhkan role ADMIN.' });
   }

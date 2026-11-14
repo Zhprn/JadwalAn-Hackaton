@@ -1,8 +1,26 @@
 import { Router } from 'express';
 import { getAllPromos, getPromoById, createPromo, updatePromo, deletePromo } from '../controllers/promo.controller';
-import { verifyToken, requireAdmin } from '../middlewares/authMiddleware';
+import { quoteBooking } from '../controllers/booking.controller';
+import { verifyToken, requireAdmin, optionalAuth } from '../middlewares/authMiddleware';
 
 const router = Router();
+
+/**
+ * @openapi
+ * /api/promos/validate:
+ *   post:
+ *     summary: Validasi kode promo untuk sebuah slot (sama dengan /api/bookings/quote)
+ *     description: Login pelanggan opsional, diperlukan untuk promo khusus tier / batas per pelanggan.
+ *     tags: [Promos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/SlotInput' }
+ *     responses:
+ *       200: { description: Rincian harga + promoValid & promoError }
+ */
+router.post('/validate', optionalAuth, quoteBooking);
 
 /**
  * @openapi
