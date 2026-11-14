@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { addDays, DATE_REGEX, dayRange, dbDate, jktParts, todayJkt } from '../lib/time';
-import { computeDailyMetric, SOLD_STATUSES } from '../services/metric.service';
+import { computeRangeMetrics, SOLD_STATUSES } from '../services/metric.service';
 import { bookingInclude } from '../services/booking.service';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
@@ -15,24 +15,22 @@ export const summary = async (req: AuthRequest, res: Response): Promise<any> => 
   const yesterday = addDays(day, -1);
 
   const now = new Date();
-  const [today, prev, upcoming, nowPlaying, chats, pendingPayments, unreadNotifs] = await Promise.all([
-    computeDailyMetric(day),
-    computeDailyMetric(yesterday),
-    prisma.booking.findMany({
-      where: { status: { in: ['pending', 'confirmed'] }, startTime: { gte: now } },
-      include: bookingInclude,
-      orderBy: { startTime: 'asc' },
-      take: 8,
-    }),
-    prisma.booking.findMany({
-      where: { status: 'checked_in', startTime: { lte: now }, endTime: { gte: now } },
-      include: bookingInclude,
-      orderBy: { endTime: 'asc' },
-    }),
-    prisma.chatSession.groupBy({ by: ['status'], where: { status: { not: 'closed' } }, _count: { _all: true } }),
-    prisma.booking.count({ where: { status: 'pending' } }),
-    prisma.notification.count({ where: { isRead: false, OR: [{ userId: null }, { userId: req.user!.id }] } }),
-  ]);
+  // Query dijalankan berurutan: endpoint ini di-polling, jadi jangan memborong pool koneksi.
+  const [prev, today] = await computeRangeMetrics(yesterday, day);
+  const upcoming = await prisma.booking.findMany({
+    where: { status: { in: ['pending', 'confirmed'] }, startTime: { gte: now } },
+    include: bookingInclude,
+    orderBy: { startTime: 'asc' },
+    take: 8,
+  });
+  const nowPlaying = await prisma.booking.findMany({
+    where: { status: 'checked_in', startTime: { lte: now }, endTime: { gte: now } },
+    include: bookingInclude,
+    orderBy: { endTime: 'asc' },
+  });
+  const chats = await prisma.chatSession.groupBy({ by: ['status'], where: { status: { not: 'closed' } }, _count: { _all: true } });
+  const pendingPayments = await prisma.booking.count({ where: { status: 'pending' } });
+  const unreadNotifs = await prisma.notification.count({ where: { isRead: false, OR: [{ userId: null }, { userId: req.user!.id }] } });
 
   const pct = (a: number, b: number) => (b ? Math.round(((a - b) / b) * 100) : a ? 100 : 0);
 
@@ -59,25 +57,16 @@ export const summary = async (req: AuthRequest, res: Response): Promise<any> => 
 export const revenueChart = async (req: AuthRequest, res: Response): Promise<any> => {
   const { days } = z.object({ days: z.coerce.number().int().min(1).max(90).default(7) }).parse(req.query);
   const today = todayJkt();
-  const list = Array.from({ length: days }, (_, i) => addDays(today, i - (days - 1)));
-
-  // Hari lampau diambil dari tabel Metric jika ada; sisanya dihitung (lalu disimpan).
-  const stored = await prisma.metric.findMany({ where: { date: { gte: dbDate(list[0]), lt: dbDate(today) } } });
-  const byDate = new Map(stored.map((m) => [m.date.toISOString().slice(0, 10), m]));
-
-  const rows = await Promise.all(
-    list.map(async (d) => {
-      const m = d !== today && byDate.get(d) ? byDate.get(d)! : await computeDailyMetric(d, { persist: d !== today });
-      return {
-        date: d,
-        revenue: m.totalRevenue,
-        bookings: m.totalBookings,
-        aiBookings: m.aiBookings,
-        cancelled: m.cancelledBookings,
-        occupancyRate: m.occupancyRate,
-      };
-    }),
-  );
+  // Seluruh rentang dihitung dengan 4 query saja (bukan 4 query per hari).
+  const metrics = await computeRangeMetrics(addDays(today, -(days - 1)), today);
+  const rows = metrics.map((m) => ({
+    date: m.dateStr,
+    revenue: m.totalRevenue,
+    bookings: m.totalBookings,
+    aiBookings: m.aiBookings,
+    cancelled: m.cancelledBookings,
+    occupancyRate: m.occupancyRate,
+  }));
   res.json({
     success: true,
     data: { days: rows, totalRevenue: rows.reduce((s, r) => s + r.revenue, 0), totalBookings: rows.reduce((s, r) => s + r.bookings, 0) },

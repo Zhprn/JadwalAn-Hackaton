@@ -13,10 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
+import { Route as AuthenticatedDashboardAiRouteImport } from './routes/_authenticated/dashboard/ai'
+import { Route as AuthenticatedDashboardBookingsRouteImport } from './routes/_authenticated/dashboard/bookings'
 import { Route as AuthenticatedDashboardCalenderRouteImport } from './routes/_authenticated/dashboard/calender'
 import { Route as AuthenticatedDashboardCostumerRouteImport } from './routes/_authenticated/dashboard/costumer'
 import { Route as AuthenticatedDashboardLivechatRouteImport } from './routes/_authenticated/dashboard/livechat'
 import { Route as AuthenticatedDashboardPromoRouteImport } from './routes/_authenticated/dashboard/promo'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,6 +39,18 @@ const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/dashboard/',
     path: '/dashboard/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardAiRoute =
+  AuthenticatedDashboardAiRouteImport.update({
+    id: '/dashboard/ai',
+    path: '/dashboard/ai',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardBookingsRoute =
+  AuthenticatedDashboardBookingsRouteImport.update({
+    id: '/dashboard/bookings',
+    path: '/dashboard/bookings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardCalenderRoute =
@@ -62,23 +77,35 @@ const AuthenticatedDashboardPromoRoute =
     path: '/dashboard/promo',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/dashboard/settings',
+    path: '/dashboard/settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/dashboard/ai': typeof AuthenticatedDashboardAiRoute
+  '/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
   '/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/dashboard/ai': typeof AuthenticatedDashboardAiRoute
+  '/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
   '/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -86,10 +113,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/dashboard/ai': typeof AuthenticatedDashboardAiRoute
+  '/_authenticated/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/_authenticated/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
   '/_authenticated/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/_authenticated/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/_authenticated/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
+  '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,29 +127,38 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/dashboard/ai'
+    | '/dashboard/bookings'
     | '/dashboard/calender'
     | '/dashboard/costumer'
     | '/dashboard/livechat'
     | '/dashboard/promo'
+    | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/dashboard/ai'
+    | '/dashboard/bookings'
     | '/dashboard/calender'
     | '/dashboard/costumer'
     | '/dashboard/livechat'
     | '/dashboard/promo'
+    | '/dashboard/settings'
     | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/dashboard/ai'
+    | '/_authenticated/dashboard/bookings'
     | '/_authenticated/dashboard/calender'
     | '/_authenticated/dashboard/costumer'
     | '/_authenticated/dashboard/livechat'
     | '/_authenticated/dashboard/promo'
+    | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -159,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/ai': {
+      id: '/_authenticated/dashboard/ai'
+      path: '/dashboard/ai'
+      fullPath: '/dashboard/ai'
+      preLoaderRoute: typeof AuthenticatedDashboardAiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard/bookings': {
+      id: '/_authenticated/dashboard/bookings'
+      path: '/dashboard/bookings'
+      fullPath: '/dashboard/bookings'
+      preLoaderRoute: typeof AuthenticatedDashboardBookingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard/calender': {
       id: '/_authenticated/dashboard/calender'
       path: '/dashboard/calender'
@@ -187,22 +240,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardPromoRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
+      path: '/dashboard/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedDashboardAiRoute: typeof AuthenticatedDashboardAiRoute
+  AuthenticatedDashboardBookingsRoute: typeof AuthenticatedDashboardBookingsRoute
   AuthenticatedDashboardCalenderRoute: typeof AuthenticatedDashboardCalenderRoute
   AuthenticatedDashboardCostumerRoute: typeof AuthenticatedDashboardCostumerRoute
   AuthenticatedDashboardLivechatRoute: typeof AuthenticatedDashboardLivechatRoute
   AuthenticatedDashboardPromoRoute: typeof AuthenticatedDashboardPromoRoute
+  AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDashboardAiRoute: AuthenticatedDashboardAiRoute,
+  AuthenticatedDashboardBookingsRoute: AuthenticatedDashboardBookingsRoute,
   AuthenticatedDashboardCalenderRoute: AuthenticatedDashboardCalenderRoute,
   AuthenticatedDashboardCostumerRoute: AuthenticatedDashboardCostumerRoute,
   AuthenticatedDashboardLivechatRoute: AuthenticatedDashboardLivechatRoute,
   AuthenticatedDashboardPromoRoute: AuthenticatedDashboardPromoRoute,
+  AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
 }
 

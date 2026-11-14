@@ -1,7 +1,7 @@
 import { addDays, todayJkt } from '../lib/time';
 import { autoCompleteBookings, expirePendingBookings, markNoShows } from '../services/booking.service';
 import { expireStalePayments } from '../services/payment.service';
-import { computeDailyMetric } from '../services/metric.service';
+import { computeRangeMetrics, persistMetrics } from '../services/metric.service';
 
 /**
  * Job latar belakang sederhana berbasis setInterval (cukup untuk satu instance server).
@@ -36,8 +36,7 @@ const bookingTick = safe('booking', async () => {
 
 const metricTick = safe('metric', async () => {
   const today = todayJkt();
-  await computeDailyMetric(addDays(today, -1), { persist: true });
-  await computeDailyMetric(today, { persist: true });
+  await persistMetrics(await computeRangeMetrics(addDays(today, -1), today));
 });
 
 export const startScheduler = () => {

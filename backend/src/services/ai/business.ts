@@ -6,7 +6,7 @@ import { getStoreSetting } from '../settings.service';
 import { getAgentConfig } from './context';
 import { generateJson } from './gemini';
 import { writeAiLog } from './log';
-import { computeDailyMetric } from '../metric.service';
+import { computeRangeMetrics } from '../metric.service';
 
 const rupiah = (n: number) => `Rp${n.toLocaleString('id-ID')}`;
 
@@ -120,7 +120,7 @@ export const getDashboardInsight = async (opts: { refresh?: boolean } = {}) => {
 
   // Data 7 hari terakhir (dihitung langsung agar akurat walau job metrik belum jalan).
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
-  const metrics = await Promise.all(days.map((d) => computeDailyMetric(d, { persist: d !== today })));
+  const metrics = await computeRangeMetrics(days[0], today);
   const upcoming = await prisma.booking.count({ where: { status: { in: ['pending', 'confirmed'] }, startTime: { gte: new Date() } } });
 
   const t0 = Date.now();

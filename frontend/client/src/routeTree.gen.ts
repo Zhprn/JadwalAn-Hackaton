@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookingRouteImport } from './routes/booking'
+import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as JadwalRouteImport } from './routes/jadwal'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PromoRouteImport } from './routes/promo'
+import { Route as BayarBookingIdRouteImport } from './routes/bayar.$bookingId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,9 +28,19 @@ const BookingRoute = BookingRouteImport.update({
   path: '/booking',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DaftarRoute = DaftarRouteImport.update({
+  id: '/daftar',
+  path: '/daftar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JadwalRoute = JadwalRouteImport.update({
   id: '/jadwal',
   path: '/jadwal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfilRoute = ProfilRouteImport.update({
@@ -40,43 +53,85 @@ const PromoRoute = PromoRouteImport.update({
   path: '/promo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BayarBookingIdRoute = BayarBookingIdRouteImport.update({
+  id: '/bayar/$bookingId',
+  path: '/bayar/$bookingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/booking': typeof BookingRoute
+  '/daftar': typeof DaftarRoute
   '/jadwal': typeof JadwalRoute
+  '/login': typeof LoginRoute
   '/profil': typeof ProfilRoute
   '/promo': typeof PromoRoute
+  '/bayar/$bookingId': typeof BayarBookingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/booking': typeof BookingRoute
+  '/daftar': typeof DaftarRoute
   '/jadwal': typeof JadwalRoute
+  '/login': typeof LoginRoute
   '/profil': typeof ProfilRoute
   '/promo': typeof PromoRoute
+  '/bayar/$bookingId': typeof BayarBookingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/booking': typeof BookingRoute
+  '/daftar': typeof DaftarRoute
   '/jadwal': typeof JadwalRoute
+  '/login': typeof LoginRoute
   '/profil': typeof ProfilRoute
   '/promo': typeof PromoRoute
+  '/bayar/$bookingId': typeof BayarBookingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/booking' | '/jadwal' | '/profil' | '/promo'
+  fullPaths:
+    | '/'
+    | '/booking'
+    | '/daftar'
+    | '/jadwal'
+    | '/login'
+    | '/profil'
+    | '/promo'
+    | '/bayar/$bookingId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/booking' | '/jadwal' | '/profil' | '/promo'
-  id: '__root__' | '/' | '/booking' | '/jadwal' | '/profil' | '/promo'
+  to:
+    | '/'
+    | '/booking'
+    | '/daftar'
+    | '/jadwal'
+    | '/login'
+    | '/profil'
+    | '/promo'
+    | '/bayar/$bookingId'
+  id:
+    | '__root__'
+    | '/'
+    | '/booking'
+    | '/daftar'
+    | '/jadwal'
+    | '/login'
+    | '/profil'
+    | '/promo'
+    | '/bayar/$bookingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookingRoute: typeof BookingRoute
+  DaftarRoute: typeof DaftarRoute
   JadwalRoute: typeof JadwalRoute
+  LoginRoute: typeof LoginRoute
   ProfilRoute: typeof ProfilRoute
   PromoRoute: typeof PromoRoute
+  BayarBookingIdRoute: typeof BayarBookingIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -95,11 +150,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/daftar': {
+      id: '/daftar'
+      path: '/daftar'
+      fullPath: '/daftar'
+      preLoaderRoute: typeof DaftarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jadwal': {
       id: '/jadwal'
       path: '/jadwal'
       fullPath: '/jadwal'
       preLoaderRoute: typeof JadwalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profil': {
@@ -116,15 +185,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PromoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bayar/$bookingId': {
+      id: '/bayar/$bookingId'
+      path: '/bayar/$bookingId'
+      fullPath: '/bayar/$bookingId'
+      preLoaderRoute: typeof BayarBookingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookingRoute: BookingRoute,
+  DaftarRoute: DaftarRoute,
   JadwalRoute: JadwalRoute,
+  LoginRoute: LoginRoute,
   ProfilRoute: ProfilRoute,
   PromoRoute: PromoRoute,
+  BayarBookingIdRoute: BayarBookingIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

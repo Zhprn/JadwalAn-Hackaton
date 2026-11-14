@@ -1,435 +1,457 @@
-import * as React from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { 
-  Download, 
-  Users, 
-  Heart, 
-  UserCheck, 
-  MoreHorizontal, 
-  Search, 
-  ArrowDownUp,
-  Sparkles,
-  X,
-  CheckCircle2,
-  RefreshCcw,
-  Send,
-  Copy,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react'
+import { useEffect, useState, type ReactNode } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download, Users, Heart, UserCheck, Search, Sparkles, X, RefreshCcw, Send, Copy, Loader2, Brain, Wand2 } from "lucide-react";
+import { toast } from "sonner";
+import { aiApi, customerApi, promoApi, promoMessageApi } from "@/services/api";
+import { Avatar, EmptyState, Pagination, SkeletonRows, TierBadge, inputCls, textareaCls } from "@/components/common";
+import { errorMessage } from "@/lib/api-client";
+import { formatWa, relativeTime, rupiah } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import type { Customer, PromoMessage, Tier } from "@/types";
 
-export const Route = createFileRoute('/_authenticated/dashboard/costumer')({
-  component: RouteComponent,
-})
+export const Route = createFileRoute("/_authenticated/dashboard/costumer")({
+  component: CustomerPage,
+});
 
-// Data mock pelanggan (10 Orang)
-const initialCustomers = [
-  { id: 1, initials: 'BP', name: 'Budi', phone: '0812xxx', lastPlay: '14 Hari Lalu', lastPlayColor: 'text-indigo-600 font-semibold', totalHours: '45 Jam' },
-  { id: 2, initials: 'DP', name: 'Dimas', phone: '0857xxx', lastPlay: '3 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '32 Jam' },
-  { id: 3, initials: 'RP', name: 'Raka', phone: '0813xxx', lastPlay: 'Hari Ini', lastPlayColor: 'text-gray-500', totalHours: '28 Jam' },
-  { id: 4, initials: 'YA', name: 'Yoga', phone: '0822xxx', lastPlay: 'Hari Ini', lastPlayColor: 'text-gray-500', totalHours: '24 Jam' },
-  { id: 5, initials: 'AH', name: 'Arif', phone: '0819xxx', lastPlay: '2 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '21 Jam' },
-  { id: 6, initials: 'BS', name: 'Bambang', phone: '0815xxx', lastPlay: '5 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '19 Jam' },
-  { id: 7, initials: 'FA', name: 'Fajar', phone: '0818xxx', lastPlay: '1 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '17 Jam' },
-  { id: 8, initials: 'GI', name: 'Gani', phone: '0852xxx', lastPlay: '6 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '15 Jam' },
-  { id: 9, initials: 'HD', name: 'Hadi', phone: '0878xxx', lastPlay: '4 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '12 Jam' },
-  { id: 10, initials: 'IN', name: 'Indra', phone: '0896xxx', lastPlay: '7 Hari Lalu', lastPlayColor: 'text-gray-500', totalHours: '10 Jam' },
-]
+type Selected = { id: string; name: string; whatsapp: string; tier: Tier; totalSessions: number; totalHours: number; lastPlayed: string | null };
 
-function RouteComponent() {
-  // 1. State Search
-  const [searchQuery, setSearchQuery] = React.useState('')
-  
-  // 2. State Pagination
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const itemsPerPage = 7
+const TONES = [
+  { value: "friendly", label: "Ramah" },
+  { value: "casual", label: "Santai" },
+  { value: "exclusive", label: "Eksklusif" },
+  { value: "urgent", label: "Mendesak" },
+];
 
-  // 3. State Pelanggan Aktif
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState<number>(1)
+const daysSince = (d: string | null) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000) : null);
 
-  // 4. Logika Filter Search
-  const filteredCustomers = React.useMemo(() => {
-    return initialCustomers.filter(cust => {
-      const query = searchQuery.toLowerCase()
-      return (
-        cust.name.toLowerCase().includes(query) || 
-        cust.phone.toLowerCase().includes(query)
-      )
-    })
-  }, [searchQuery])
+function CustomerPage() {
+  const [tab, setTab] = useState<"all" | "loyal" | "comeback">("all");
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState("lastPlayed");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Selected | null>(null);
 
-  // Reset ke halaman 1 saat sedang mencari
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery])
+  useEffect(() => setPage(1), [tab, q, sort]);
 
-  // 5. Logika Slicing Pagination (hanya tampil 5 data per halaman)
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
-  const paginatedCustomers = React.useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredCustomers.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredCustomers, currentPage])
+  const params = {
+    search: q || undefined,
+    sort,
+    inactiveDays: tab === "comeback" ? 14 : undefined,
+    page,
+    limit: 10,
+  };
+  const list = useQuery({
+    queryKey: ["customers", tab, params],
+    queryFn: async () => {
+      if (tab !== "loyal") return customerApi.list(params);
+      // "Loyal" = loyal + vip, urut berdasarkan belanja.
+      const [vip, loyal] = await Promise.all([
+        customerApi.list({ ...params, tier: "vip", sort: "totalSpent", limit: 50, page: 1 }),
+        customerApi.list({ ...params, tier: "loyal", sort: "totalSpent", limit: 50, page: 1 }),
+      ]);
+      const data = [...vip.data, ...loyal.data];
+      return { data, meta: { page: 1, limit: data.length || 1, total: data.length, totalPages: 1 } };
+    },
+    placeholderData: keepPreviousData,
+  });
 
-  // Detail pelanggan aktif untuk AI Promo
-  const activeCustomer = initialCustomers.find(c => c.id === selectedCustomerId) || initialCustomers[0]
+  const total = useQuery({ queryKey: ["customers", "count"], queryFn: () => customerApi.list({ limit: 1 }) });
+  const loyalCount = useQuery({
+    queryKey: ["customers", "count", "loyal"],
+    queryFn: async () => {
+      const [a, b] = await Promise.all([customerApi.list({ tier: "loyal", limit: 1 }), customerApi.list({ tier: "vip", limit: 1 })]);
+      return a.meta.total + b.meta.total;
+    },
+  });
+  const targets = useQuery({ queryKey: ["promo-targets"], queryFn: () => promoMessageApi.targets({ inactiveDays: 14, limit: 200 }) });
+  const stats = useQuery({ queryKey: ["promo-messages", "stats"], queryFn: promoMessageApi.stats });
 
-  // --- LOGIKA PESAN ---
-  const [pesanIndex, setPesanIndex] = React.useState(0)
-
-  const variasiPesan = [
-    `Bro ${activeCustomer.name}! Udah 2 minggu nih absen mabar eFootball. Weekend ini rental PS Cuku Sunguik ada diskon 15% khusus member VIP kayak lu. Gass booking slotnya sekarang? 😎`,
-    `Halo ${activeCustomer.name}! Kangen main eFootball gak nih? Udah 14 hari lho absen. Spesial buat lu member VIP, kita kasih promo diskon 15% weekend ini di PS Cuku Sunguik. Yuk merapat! 🎮🔥`,
-    `Woy ${activeCustomer.name}, kemana aja nih 2 minggu gak keliatan mabar eFootball? Sini mampir ke PS Cuku Sunguik, mumpung ada voucher diskon 15% khusus VIP! Amankan slot lu sekarang sebelum full bosku! ⚽🙌`
-  ]
-
-  const handleVersiLain = () => {
-    setPesanIndex((prevIndex) => (prevIndex + 1) % variasiPesan.length)
-  }
-
-  // --- FUNGSI EXPORT PDF ---
   const handleExportPDF = () => {
-    // 1. Inisialisasi dokumen PDF (landscape agar tabel muat banyak)
-    const doc = new jsPDF('landscape')
-    
-    // 2. Tambahkan Judul
-    doc.setFontSize(18)
-    doc.setTextColor(31, 41, 55) // text-gray-900 (Tailwind)
-    doc.text('Daftar Pelanggan Loyal - JadwalAn', 14, 22)
-    
-    doc.setFontSize(11)
-    doc.setTextColor(107, 114, 128) // text-gray-500 (Tailwind)
-    doc.text('Rental PS Cuku Sunguik', 14, 30)
-
-    // 3. Siapkan data untuk tabel
-    // Kita ambil dari filteredCustomers supaya yg di-export sesuai hasil pencarian saat itu
-    // Jika ingin ekspor SEMUA data tanpa terpengaruh pencarian, ganti dengan initialCustomers
-    const tableColumn = ["No", "Nama Pelanggan", "Nomor WhatsApp", "Terakhir Main", "Total Jam Bermain"]
-    const tableRows: any[] = []
-
-    filteredCustomers.forEach((cust, index) => {
-      const customerData = [
-        index + 1,
-        cust.name,
-        cust.phone,
-        cust.lastPlay,
-        cust.totalHours,
-      ]
-      tableRows.push(customerData)
-    })
-
-    // 4. Generate Tabel menggunakan autotable
+    const rows = list.data?.data ?? [];
+    const doc = new jsPDF("landscape");
+    doc.setFontSize(18);
+    doc.setTextColor(31, 41, 55);
+    doc.text("Daftar Pelanggan - JadwalAn", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Diekspor ${new Date().toLocaleString("id-ID")}`, 14, 30);
     autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40, // Posisi Y (vertikal) mulai tabel (dibawah judul)
-      theme: 'grid',
-      styles: { 
-        font: 'helvetica', 
-        fontSize: 10,
-        cellPadding: 4,
-      },
-      headStyles: { 
-        fillColor: [79, 70, 229], // Warna bg-indigo-600 dari Tailwind
-        textColor: 255, 
-        fontStyle: 'bold' 
-      },
-      alternateRowStyles: { 
-        fillColor: [249, 250, 251] // Warna bg-gray-50 dari Tailwind
-      },
-      columnStyles: {
-        0: { cellWidth: 15, halign: 'center' }, // Kolom 'No'
-      }
-    })
+      startY: 36,
+      head: [["Nama", "WhatsApp", "Tier", "Sesi", "Jam main", "Total belanja", "Terakhir main"]],
+      body: rows.map((c) => [c.name, formatWa(c.whatsapp), c.tier, c.totalSessions, c.totalHours, rupiah(c.totalSpent), c.lastPlayed ? relativeTime(c.lastPlayed) : "-"]),
+      headStyles: { fillColor: [79, 70, 229] },
+      styles: { fontSize: 10 },
+    });
+    doc.save("pelanggan-jadwalan.pdf");
+  };
 
-    // 5. Simpan dan otomatis unduh file PDF
-    const tanggalHariIni = new Date().toISOString().split('T')[0] // Format YYYY-MM-DD
-    doc.save(`Data_Pelanggan_${tanggalHariIni}.pdf`)
-  }
+  const pick = (c: Customer) =>
+    setSelected({ id: c.id, name: c.name, whatsapp: c.whatsapp, tier: c.tier, totalSessions: c.totalSessions, totalHours: c.totalHours, lastPlayed: c.lastPlayed });
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-2rem)] font-sans text-gray-900">
-      
-      {/* --- Header Section --- */}
+    <div className="flex flex-col font-sans text-gray-900 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-gray-900 flex items-center gap-2">
-            Bikin pelanggan balik lagi
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Promo personal yang relevan, dibuat AI dari kebiasaan main pelanggan.
-          </p>
+          <h1 className="text-[28px] font-bold text-gray-900">Bikin pelanggan balik lagi</h1>
+          <p className="text-gray-500 mt-1 text-sm">Promo personal yang relevan, dibuat AI dari kebiasaan main pelanggan.</p>
         </div>
-        <button 
-          onClick={handleExportPDF} 
-          className="bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 active:scale-95 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition-all"
+        <button
+          type="button"
+          onClick={handleExportPDF}
+          className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 active:scale-95 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition-all"
         >
-          <Download className="w-4 h-4" />
-          Ekspor pelanggan
+          <Download className="w-4 h-4" /> Ekspor pelanggan
         </button>
       </div>
 
-      {/* --- Stat Cards --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-blue-50 p-3.5 rounded-xl text-blue-600">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">128</div>
-            <div className="text-sm text-gray-500">Pelanggan terdaftar</div>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-purple-50 p-3.5 rounded-xl text-purple-600">
-            <Heart className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">24</div>
-            <div className="text-sm text-gray-500">Member loyal</div>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-600">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">12</div>
-            <div className="text-sm text-gray-500">Perlu disapa kembali</div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <StatCard icon={<Users className="w-6 h-6" />} tone="bg-blue-50 text-blue-600" value={total.data?.meta.total ?? "–"} label="Pelanggan terdaftar" />
+        <StatCard icon={<Heart className="w-6 h-6" />} tone="bg-purple-50 text-purple-600" value={loyalCount.data ?? "–"} label="Member loyal & VIP" />
+        <StatCard icon={<UserCheck className="w-6 h-6" />} tone="bg-emerald-50 text-emerald-600" value={targets.data?.length ?? "–"} label="Perlu disapa kembali" />
+        <StatCard
+          icon={<Send className="w-6 h-6" />}
+          tone="bg-indigo-50 text-indigo-600"
+          value={stats.data ? `${Math.round(stats.data.conversionRate * 100)}%` : "–"}
+          label={`Konversi promo · ${stats.data?.sent ?? 0} terkirim`}
+        />
       </div>
 
-      {/* --- Main Content Grid --- */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
-        
-        {/* --- Left Column: Table --- */}
-        <div className="xl:col-span-2 bg-white border border-gray-200 rounded-3xl shadow-sm p-6 flex flex-col w-full overflow-hidden h-full">
-          
-          <div className="flex justify-between items-start mb-6 shrink-0">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        {/* Tabel pelanggan */}
+        <div className="xl:col-span-2 bg-white border border-gray-200 rounded-3xl shadow-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-5">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Pelanggan Loyal</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Kenali pemain terbaik rentalmu.</p>
+              <h2 className="text-lg font-bold text-gray-900">{tab === "comeback" ? "Perlu disapa kembali" : tab === "loyal" ? "Pelanggan Loyal" : "Semua pelanggan"}</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Pilih pelanggan untuk membuat promo personal dengan AI.</p>
             </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Search & Filter */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 shrink-0">
-            <div className="relative w-full sm:w-[320px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama atau WhatsApp..." 
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
-              />
-            </div>
-            <button className="w-full sm:w-auto bg-white border border-gray-200 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm shrink-0">
-              <ArrowDownUp className="w-4 h-4" />
-              Total jam terbanyak
-            </button>
-          </div>
-
-          <div className="w-full overflow-x-auto flex-1">
-            <table className="w-full text-left min-w-[700px]">
-              <thead>
-                <tr className="border-b border-gray-100 text-xs font-bold text-gray-400">
-                  <th className="pb-3 px-4 font-medium w-[25%]">Nama</th>
-                  <th className="pb-3 px-4 font-medium w-[20%]">WhatsApp</th>
-                  <th className="pb-3 px-4 font-medium w-[20%]">Main Terakhir</th>
-                  <th className="pb-3 px-4 font-medium w-[20%]">Total Jam Main</th>
-                  <th className="pb-3 px-4 font-medium w-[15%]">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {paginatedCustomers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500 text-sm">
-                      Pelanggan tidak ditemukan.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedCustomers.map((cust) => {
-                    const isActive = cust.id === selectedCustomerId;
-                    return (
-                      <tr key={cust.id} className={`${isActive ? `bg-indigo-50/40` : `hover:bg-gray-50/50`} transition-colors`}>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isActive ? `bg-indigo-600 text-white` : `bg-gray-100 text-gray-600`}`}>
-                              {cust.initials}
-                            </div>
-                            <span className="font-bold text-sm text-gray-900 truncate">{cust.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-4 text-sm text-gray-500 truncate">{cust.phone}</td>
-                        <td className={`py-5 px-4 text-sm truncate ${cust.lastPlayColor}`}>{cust.lastPlay}</td>
-                        <td className="py-5 px-4 text-sm font-bold text-gray-900 truncate">{cust.totalHours}</td>
-                        <td className="py-5 px-4 text-right sm:text-left">
-                          <button 
-                            onClick={() => setSelectedCustomerId(cust.id)}
-                            className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm w-full sm:w-auto whitespace-nowrap ${
-                              isActive 
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                            }`}
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Generate Promo WA
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="mt-auto pt-6 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 font-medium shrink-0">
-            <span>
-              Menampilkan {paginatedCustomers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} dari {filteredCustomers.length} pelanggan
-            </span>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-1 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-6 h-6 rounded flex items-center justify-center font-bold transition-colors ${
-                    currentPage === page 
-                      ? 'bg-indigo-50 text-indigo-600' 
-                      : 'hover:bg-gray-50 text-gray-600'
-                  }`}
-                >
-                  {page}
+            <div className="flex items-center bg-slate-100 p-1 rounded-lg">
+              {(
+                [
+                  ["all", "Semua"],
+                  ["loyal", "Loyal"],
+                  ["comeback", "Absen ≥14 hari"],
+                ] as const
+              ).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setTab(k)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap", tab === k ? "bg-white shadow-sm text-slate-800" : "text-slate-500")}>
+                  {l}
                 </button>
               ))}
-
-              <button 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="p-1 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input className={`${inputCls} pl-9 rounded-xl`} placeholder="Cari nama atau nomor WhatsApp" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari pelanggan" />
+            </div>
+            {tab !== "loyal" && (
+              <select className={`${inputCls} sm:w-48 rounded-xl`} value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Urutkan">
+                <option value="lastPlayed">Terakhir main</option>
+                <option value="totalSpent">Total belanja</option>
+                <option value="totalSessions">Total sesi</option>
+                <option value="newest">Terbaru daftar</option>
+                <option value="name">Nama A–Z</option>
+              </select>
+            )}
+          </div>
+
+          <div className="overflow-x-auto -mx-6">
+            <table className="w-full text-left min-w-[720px]">
+              <thead>
+                <tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="py-3 px-6 font-semibold">Pelanggan</th>
+                  <th className="py-3 px-6 font-semibold">Tier</th>
+                  <th className="py-3 px-6 font-semibold">Main</th>
+                  <th className="py-3 px-6 font-semibold">Belanja</th>
+                  <th className="py-3 px-6 font-semibold">Terakhir main</th>
+                  <th className="py-3 px-6" />
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {list.isLoading && <SkeletonRows rows={6} cols={6} />}
+                {list.data?.data.map((c) => {
+                  const d = daysSince(c.lastPlayed);
+                  return (
+                    <tr key={c.id} className={cn("border-b border-gray-50 hover:bg-slate-50/50", selected?.id === c.id && "bg-indigo-50/40")}>
+                      <td className="py-3 px-6">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={c.name} />
+                          <div>
+                            <p className="font-semibold text-gray-900">{c.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatWa(c.whatsapp)}
+                              {c.optOutPromo && <span className="ml-1 text-red-500">· tolak promo</span>}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-6">
+                        <TierBadge tier={c.tier} />
+                      </td>
+                      <td className="py-3 px-6 text-gray-600">
+                        {c.totalSessions} sesi · {c.totalHours} jam
+                      </td>
+                      <td className="py-3 px-6 font-semibold text-gray-800">{rupiah(c.totalSpent)}</td>
+                      <td className={cn("py-3 px-6", d != null && d >= 14 ? "text-indigo-600 font-semibold" : "text-gray-500")}>
+                        {c.lastPlayed ? relativeTime(c.lastPlayed) : "Belum pernah"}
+                      </td>
+                      <td className="py-3 px-6 text-right">
+                        <button
+                          type="button"
+                          onClick={() => pick(c)}
+                          disabled={c.optOutPromo}
+                          className="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 disabled:opacity-40"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Buat promo
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {list.data && !list.data.data.length && <EmptyState title="Tidak ada pelanggan" description="Coba ubah pencarian atau filter." />}
+          </div>
+          {tab !== "loyal" && (
+            <div className="-mx-6 -mb-6 mt-2">
+              <Pagination meta={list.data?.meta} onPage={setPage} />
+            </div>
+          )}
         </div>
 
-        {/* --- Right Column: AI Promo Generator --- */}
-        <div className="bg-white border-2 border-indigo-50 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between relative w-full h-full">
-          
-          <div>
-            {/* Header AI Panel */}
-            <div className="bg-indigo-50/50 p-5 px-6 border-b border-indigo-100 flex justify-between items-center rounded-t-3xl">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold">
-                <Sparkles className="w-5 h-5" />
-                AI Promo Generator
-              </div>
-              <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              
-              {/* Customer Info Box */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                    {activeCustomer.initials}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-sm">{activeCustomer.name}</h3>
-                    <p className="text-xs text-gray-500">VIP • {activeCustomer.totalHours} main • {activeCustomer.phone}</p>
-                  </div>
-                </div>
-                <span className="bg-indigo-50 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Loyal
-                </span>
-              </div>
-
-              {/* Progress/Status */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center text-xs font-medium text-gray-500 mb-2">
-                  <span>Menganalisis riwayat {activeCustomer.name}...</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-indigo-600 w-full rounded-full"></div>
-                </div>
-                <div className="text-[11px] font-medium text-emerald-500">
-                  Analisis selesai · Promo personal siap dikirim
-                </div>
-              </div>
-
-              {/* Tags/Keywords */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                <span className="px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200 text-gray-600 text-xs font-semibold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span> PS
-                </span>
-                <span className="px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200 text-gray-600 text-xs font-semibold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Absen 14 hari
-                </span>
-                <span className="px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Diskon 15%
-                </span>
-              </div>
-
-              {/* Generated Message Draft */}
-              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mb-4">
-                <div className="text-[10px] font-bold text-indigo-600 tracking-wider uppercase mb-3">
-                  Draf Pesan WhatsApp
-                </div>
-                <p className="text-sm text-gray-800 leading-relaxed min-h-[80px]">
-                  {variasiPesan[pesanIndex]}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-center mb-6">
-                <button 
-                  onClick={handleVersiLain}
-                  className="text-indigo-600 text-sm font-semibold flex items-center gap-2 hover:text-indigo-700 transition-colors active:scale-95"
-                >
-                  <RefreshCcw className="w-4 h-4" /> Buat versi lain
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Footer Action Buttons */}
-          <div className="p-6 pt-0">
-            <div className="flex flex-col gap-2.5 mb-4 w-full">
-              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors">
-                <Send className="w-4 h-4 shrink-0" /> Kirim via WA Web
-              </button>
-              <button className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors">
-                <Copy className="w-4 h-4 shrink-0" /> Salin Teks
-              </button>
-            </div>
-
-            <p className="text-center text-[11px] font-medium text-gray-400">
-              Pesan belum dikirim. Tinjau draf sebelum membuka WhatsApp Web.
-            </p>
-          </div>
-        </div>
+        {/* AI Promo Generator */}
+        <PromoGenerator customer={selected} onClose={() => setSelected(null)} />
       </div>
     </div>
-  )
+  );
+}
+
+function StatCard({ icon, tone, value, label }: { icon: ReactNode; tone: string; value: ReactNode; label: string }) {
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+      <div className={cn("p-3.5 rounded-xl", tone)}>{icon}</div>
+      <div>
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
+        <div className="text-sm text-gray-500">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function PromoGenerator({ customer, onClose }: { customer: Selected | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [tone, setTone] = useState("friendly");
+  const [promoId, setPromoId] = useState("");
+  const [instruction, setInstruction] = useState("");
+  const [draft, setDraft] = useState<PromoMessage | null>(null);
+  const [content, setContent] = useState("");
+
+  const { data: promos } = useQuery({ queryKey: ["promos", "valid"], queryFn: () => promoApi.list({ isActive: true, valid: true }) });
+  const insight = useQuery({
+    queryKey: ["ai", "insight", "customer", customer?.id],
+    queryFn: () => aiApi.customerInsight(customer!.id),
+    enabled: false,
+    retry: 0,
+  });
+
+  // Ambil draft terakhir pelanggan ini (jika ada).
+  const latest = useQuery({
+    queryKey: ["promo-messages", "draft", customer?.id],
+    queryFn: () => promoMessageApi.list({ customerId: customer!.id, status: "draft", limit: 1 }),
+    enabled: !!customer,
+  });
+  useEffect(() => {
+    const d = latest.data?.data[0] ?? null;
+    setDraft(d);
+    setContent(d?.content ?? "");
+  }, [latest.data, customer?.id]);
+
+  const onDraft = (d: PromoMessage) => {
+    setDraft(d);
+    setContent(d.content);
+    qc.invalidateQueries({ queryKey: ["promo-messages"] });
+  };
+
+  const generate = useMutation({
+    mutationFn: () => promoMessageApi.generate({ customerId: customer!.id, promoId: promoId || null, tone, instruction: instruction || undefined }),
+    onSuccess: onDraft,
+    onError: (e) => toast.error(errorMessage(e, "AI gagal membuat pesan")),
+  });
+  const regenerate = useMutation({
+    mutationFn: () => promoMessageApi.regenerate(draft!.id, { tone, instruction: instruction || undefined }),
+    onSuccess: onDraft,
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  const send = useMutation({
+    mutationFn: async () => {
+      if (draft && content !== draft.content) await promoMessageApi.update(draft.id, { content });
+      return promoMessageApi.send(draft!.id);
+    },
+    onSuccess: (res) => {
+      if (res.waLink) window.open(res.waLink, "_blank", "noopener");
+      toast.success("Ditandai terkirim — WhatsApp dibuka di tab baru");
+      setDraft(null);
+      setContent("");
+      qc.invalidateQueries({ queryKey: ["promo-messages"] });
+      qc.invalidateQueries({ queryKey: ["promo-targets"] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  if (!customer) {
+    return (
+      <div className="bg-white border-2 border-indigo-50 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 text-center flex flex-col items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <Sparkles className="w-7 h-7" />
+        </div>
+        <h3 className="font-bold text-gray-900">AI Promo Generator</h3>
+        <p className="text-sm text-gray-500 max-w-xs">Pilih pelanggan di tabel, lalu AI akan menulis pesan WhatsApp personal berdasarkan kebiasaan mainnya.</p>
+      </div>
+    );
+  }
+
+  const absent = daysSince(customer.lastPlayed);
+  const busy = generate.isPending || regenerate.isPending;
+
+  return (
+    <div className="bg-white border-2 border-indigo-50 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col relative xl:sticky xl:top-24">
+      <div className="bg-indigo-50/50 p-5 px-6 border-b border-indigo-100 flex justify-between items-center rounded-t-3xl">
+        <div className="flex items-center gap-2 text-indigo-600 font-bold">
+          <Sparkles className="w-5 h-5" /> AI Promo Generator
+        </div>
+        <button type="button" onClick={onClose} aria-label="Tutup" className="text-gray-400 hover:text-gray-600">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar name={customer.name} className="w-10 h-10 text-sm" />
+            <div className="min-w-0">
+              <h3 className="font-bold text-gray-900 text-sm truncate">{customer.name}</h3>
+              <p className="text-xs text-gray-500">
+                {customer.totalSessions} sesi · {customer.totalHours} jam · {formatWa(customer.whatsapp)}
+              </p>
+            </div>
+          </div>
+          <TierBadge tier={customer.tier} />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {absent != null && (
+            <span className={cn("px-3 py-1 rounded-full border text-xs font-semibold", absent >= 14 ? "bg-indigo-50 border-indigo-100 text-indigo-600" : "bg-gray-50 border-gray-200 text-gray-600")}>
+              Absen {absent} hari
+            </span>
+          )}
+          {draft?.tags.map((t) => (
+            <span key={t} className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-600 text-xs font-semibold">
+              {t}
+            </span>
+          ))}
+        </div>
+
+        {/* Analisis AI */}
+        <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+          {insight.data ? (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-violet-700 flex items-center gap-1.5">
+                <Brain className="w-3.5 h-3.5" /> {insight.data.title}
+                {insight.data.data?.churnRisk && <span className="ml-auto font-semibold text-violet-600">risiko churn: {insight.data.data.churnRisk}</span>}
+              </p>
+              <p className="text-xs text-violet-900/80 leading-relaxed">{insight.data.content}</p>
+              {!!insight.data.data?.recommendations?.length && (
+                <ul className="list-disc list-inside text-xs text-violet-900/80">
+                  {insight.data.data.recommendations.slice(0, 3).map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <button type="button" onClick={() => insight.refetch()} disabled={insight.isFetching} className="w-full text-xs font-semibold text-violet-700 flex items-center justify-center gap-2">
+              {insight.isFetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+              {insight.isFetching ? "Menganalisis riwayat…" : insight.error ? errorMessage(insight.error) : "Analisis kebiasaan pelanggan dengan AI"}
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5 text-xs font-semibold text-gray-600">
+            Promo
+            <select className={inputCls} value={promoId} onChange={(e) => setPromoId(e.target.value)}>
+              <option value="">Tanpa kode promo</option>
+              {promos?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs font-semibold text-gray-600">
+            Gaya bahasa
+            <select className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
+              {TONES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input className={`${inputCls} col-span-2`} placeholder="Instruksi tambahan (opsional), mis. sebut turnamen Sabtu" value={instruction} onChange={(e) => setInstruction(e.target.value)} />
+        </div>
+
+        {draft ? (
+          <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
+            <div className="text-[10px] font-bold text-indigo-600 tracking-wider uppercase mb-2 flex justify-between">
+              <span>Draf pesan WhatsApp</span>
+              <span className="text-indigo-400">versi {draft.version}</span>
+            </div>
+            <textarea className={`${textareaCls} bg-white min-h-[120px]`} value={content} onChange={(e) => setContent(e.target.value)} aria-label="Isi pesan" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => generate.mutate()}
+            disabled={busy}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            {busy ? "AI sedang menulis…" : "Buat pesan dengan AI"}
+          </button>
+        )}
+
+        {draft && (
+          <>
+            <div className="flex justify-center">
+              <button type="button" onClick={() => regenerate.mutate()} disabled={busy} className="text-indigo-600 text-sm font-semibold flex items-center gap-2 hover:text-indigo-700 disabled:opacity-50">
+                <RefreshCcw className={cn("w-4 h-4", busy && "animate-spin")} /> Buat versi lain
+              </button>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => send.mutate()}
+                disabled={send.isPending || !content.trim()}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
+              >
+                {send.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Kirim via WA Web
+              </button>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(content).then(() => toast.success("Teks disalin"))}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Copy className="w-4 h-4" /> Salin teks
+              </button>
+            </div>
+            <p className="text-center text-[11px] font-medium text-gray-400">Tinjau draf sebelum membuka WhatsApp Web.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }

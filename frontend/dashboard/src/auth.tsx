@@ -1,20 +1,20 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-
-export const ACCESS_TOKEN_KEY = "accessToken";
-export const USER_DATA_KEY = "user-data";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_DATA_KEY } from "@/lib/api-client";
 
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   role: "ADMIN" | "CUSTOMER";
+  avatarUrl?: string | null;
 };
 
 export interface AuthState {
   isAuthenticated: boolean;
   user: AuthUser | null;
-  login: (accessToken: string, user: AuthUser) => void;
+  login: (tokens: { accessToken: string; refreshToken: string }, user: AuthUser) => void;
   logout: () => void;
+  setUser: (user: AuthUser) => void;
 }
 
 function readStoredUser(): AuthUser | null {
@@ -29,28 +29,43 @@ function readStoredUser(): AuthUser | null {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(readStoredUser);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !!localStorage.getItem(ACCESS_TOKEN_KEY),
-  );
+  const [user, setUserState] = useState<AuthUser | null>(readStoredUser);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!localStorage.getItem(ACCESS_TOKEN_KEY));
 
-  const login = useCallback((accessToken: string, nextUser: AuthUser) => {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  const login = useCallback((tokens: { accessToken: string; refreshToken: string }, nextUser: AuthUser) => {
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(nextUser));
-    setUser(nextUser);
+    setUserState(nextUser);
     setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_DATA_KEY);
-    setUser(null);
+    setUserState(null);
     setIsAuthenticated(false);
   }, []);
 
+  const setUser = useCallback((next: AuthUser) => {
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(next));
+    setUserState(next);
+  }, []);
+
+  // Sesi berakhir (refresh token gagal) → keluar otomatis.
+  useEffect(() => {
+    const onLogout = () => {
+      setUserState(null);
+      setIsAuthenticated(false);
+    };
+    window.addEventListener("auth:logout", onLogout);
+    return () => window.removeEventListener("auth:logout", onLogout);
+  }, []);
+
   const value = useMemo(
-    () => ({ isAuthenticated, user, login, logout }),
-    [isAuthenticated, user, login, logout],
+    () => ({ isAuthenticated, user, login, logout, setUser }),
+    [isAuthenticated, user, login, logout, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
