@@ -345,7 +345,7 @@ function ResultView({ result, busy, onRegenerate }: { result: PosterCaption; bus
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{a.poster_type}</span>
               <span className="text-[10px] text-slate-400">
-                {platformLabel(result.platform)} · {result.tone} · {result.model}
+                {platformLabel(result.platform)} · {result.tone}
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-900">{a.headline}</h2>

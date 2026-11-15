@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, BookOpen, Activity, Plus, Pencil, Trash2, Zap, CheckCircle2, AlertTriangle, RotateCcw } from "lucide-react";
+import { Bot, BookOpen, Activity, Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Btn, Card, EmptyState, Field, PageHeader, Pagination, Spinner, Toggle, inputCls, textareaCls } from "@/components/common";
@@ -29,63 +29,12 @@ const TABS = [
 function AiPage() {
   const { tab = "agent" } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const status = useQuery({ queryKey: ["ai", "status"], queryFn: () => aiApi.status(false) });
-  const [pinging, setPinging] = useState(false);
-  const [ping, setPing] = useState<{ ok: boolean; latencyMs: number; error?: string; model?: string } | null>(null);
-
-  const testConnection = async () => {
-    setPinging(true);
-    try {
-      const res = await aiApi.status(true);
-      setPing(res.ping);
-      if (res.ping?.ok) toast.success(`Gemini terhubung (${res.ping.latencyMs} ms)`);
-      else toast.error(res.ping?.error ?? "Gemini tidak merespons");
-    } catch (e) {
-      toast.error(errorMessage(e));
-    } finally {
-      setPinging(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
       <PageHeader
         title="Pengaturan AI"
-        subtitle="Gemini multi-agent: Router → Booking / Info / Support agent."
-        actions={
-          <>
-            {status.data &&
-              (status.data.configured ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> GEMINI_API_KEY terpasang
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-semibold">
-                  <AlertTriangle className="w-3.5 h-3.5" /> GEMINI_API_KEY belum diisi
-                </span>
-              ))}
-            <Btn variant="outline" onClick={testConnection} loading={pinging}>
-              <Zap className="w-4 h-4" /> Tes koneksi
-            </Btn>
-          </>
-        }
+        subtitle="Multi-agent: Router → Booking / Info / Support agent."
       />
-
-      {(status.data || ping) && (
-        <div className="flex flex-wrap gap-2 text-xs">
-          {status.data &&
-            Object.entries(status.data.models).map(([k, v]) => (
-              <span key={k} className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">
-                {k}: <b className="font-mono">{v}</b>
-              </span>
-            ))}
-          {ping && (
-            <span className={cn("px-2.5 py-1 rounded-md font-semibold", ping.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600")}>
-              {ping.ok ? `OK · ${ping.model} · ${ping.latencyMs} ms` : `Gagal: ${ping.error}`}
-            </span>
-          )}
-        </div>
-      )}
 
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
         {TABS.map((t) => (
@@ -155,7 +104,6 @@ function AgentForm({ agent }: { agent: AiAgent }) {
     mutationFn: () =>
       aiApi.updateAgent(agent.feature, {
         name: f.name,
-        model: f.model,
         systemPrompt: f.systemPrompt,
         temperature: f.temperature,
         maxTokens: f.maxTokens,
@@ -197,9 +145,6 @@ function AgentForm({ agent }: { agent: AiAgent }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Nama asisten">
           <input className={inputCls} value={f.name} onChange={(e) => set("name", e.target.value)} />
-        </Field>
-        <Field label="Model Gemini" hint="Jika model tidak tersedia, backend otomatis pakai model cadangan.">
-          <ModelSelect value={f.model} onChange={(v) => set("model", v)} />
         </Field>
         <Field label="Persona / system prompt" className="sm:col-span-2">
           <textarea className={textareaCls} rows={6} value={f.systemPrompt} onChange={(e) => set("systemPrompt", e.target.value)} />
@@ -494,7 +439,6 @@ function LogsTab() {
                 <th className="py-3 px-5 font-semibold">Fitur</th>
                 <th className="py-3 px-5 font-semibold">Pesan / output</th>
                 <th className="py-3 px-5 font-semibold">Tools</th>
-                <th className="py-3 px-5 font-semibold">Model</th>
                 <th className="py-3 px-5 font-semibold">Latensi</th>
                 <th className="py-3 px-5 font-semibold">Status</th>
               </tr>
@@ -513,7 +457,6 @@ function LogsTab() {
                     {l.errorMessage && <p className="text-xs text-red-600 truncate">{l.errorMessage}</p>}
                   </td>
                   <td className="py-3 px-5 text-[11px] text-indigo-600">{l.toolCalls?.map((t) => t.name).join(", ") || "—"}</td>
-                  <td className="py-3 px-5 text-[11px] font-mono text-slate-500">{l.model}</td>
                   <td className="py-3 px-5 text-xs text-slate-600 whitespace-nowrap">{(l.latencyMs / 1000).toFixed(1)} dtk</td>
                   <td className="py-3 px-5">
                     <span
@@ -548,51 +491,3 @@ function StatBox({ label, value, sub, accent }: { label: string; value: ReactNod
   );
 }
 
-const GEMINI_MODELS = [
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3-flash-preview",
-  "gemini-3.5-flash",
-  "gemini-3.6-flash",
-];
-const CUSTOM_MODEL = "__custom__";
-
-/** Dropdown model Gemini + opsi ketik manual untuk model lain. */
-function ModelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const known = GEMINI_MODELS.includes(value);
-  const [custom, setCustom] = useState(!known && !!value);
-  return (
-    <div className="space-y-2">
-      <select
-        className={`${inputCls} font-mono`}
-        value={custom ? CUSTOM_MODEL : value}
-        onChange={(e) => {
-          if (e.target.value === CUSTOM_MODEL) {
-            setCustom(true);
-          } else {
-            setCustom(false);
-            onChange(e.target.value);
-          }
-        }}
-      >
-        {!known && !custom && value && <option value={value}>{value}</option>}
-        {GEMINI_MODELS.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-        <option value={CUSTOM_MODEL}>Lainnya (ketik manual)…</option>
-      </select>
-      {custom && (
-        <input
-          className={`${inputCls} font-mono`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="mis. gemini-3.5-flash"
-          autoFocus
-        />
-      )}
-    </div>
-  );
-}
