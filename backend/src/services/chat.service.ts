@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 import { badRequest, forbidden, notFound } from '../lib/http';
 import { notifyAdmins } from '../lib/activity';
 import { outbound } from '../lib/outbound';
+import { jktParts } from '../lib/time';
 import { getAgentConfig, isWithinActiveHours } from './ai/context';
 import { runChatTurn, summarizeSession, type HistoryItem } from './ai/orchestrator';
 
@@ -59,6 +60,23 @@ export const assertSessionAccess = async (sessionId: string, user: { id: string;
   return session;
 };
 
+/** Relasi yang ikut dikirim bersama pesan (kartu booking & QRIS butuh data booking + pembayaran). */
+export const messageInclude = {
+  admin: { select: { id: true, name: true, avatarUrl: true } },
+  booking: {
+    select: {
+      id: true,
+      bookingCode: true,
+      status: true,
+      startTime: true,
+      endTime: true,
+      totalPrice: true,
+      station: { select: { name: true } },
+      payment: { select: { status: true, method: true, amount: true, qrUrl: true, expiredAt: true } },
+    },
+  },
+} satisfies Prisma.ChatMessageInclude;
+
 export const listMessages = (sessionId: string, opts: { after?: Date; before?: Date; limit?: number }) =>
   prisma.chatMessage
     .findMany({
@@ -67,10 +85,7 @@ export const listMessages = (sessionId: string, opts: { after?: Date; before?: D
         ...(opts.after ? { createdAt: { gt: opts.after } } : {}),
         ...(opts.before ? { createdAt: { lt: opts.before } } : {}),
       },
-      include: {
-        admin: { select: { id: true, name: true, avatarUrl: true } },
-        booking: { select: { id: true, bookingCode: true, status: true, startTime: true, endTime: true, totalPrice: true, station: { select: { name: true } } } },
-      },
+      include: messageInclude,
       // Tanpa `after`: ambil N terbaru lalu dibalik supaya urut naik.
       orderBy: { createdAt: opts.after ? 'asc' : 'desc' },
       take: Math.min(opts.limit ?? 50, 200),
@@ -157,6 +172,7 @@ export const handleCustomerMessage = async (sessionId: string, customerId: strin
           tools: turn.toolCalls.map((t) => t.name),
         },
       },
+      include: messageInclude,
     }),
   );
 
@@ -165,9 +181,33 @@ export const handleCustomerMessage = async (sessionId: string, customerId: strin
     replies.push(
       await prisma.chatMessage.create({
         data: { sessionId, sender: 'ai', type: 'booking_card', message: `Booking ${b?.bookingCode ?? ''} berhasil dibuat`, bookingId },
+        include: messageInclude,
       }),
     );
     await addEvent(sessionId, 'booking_created', b?.bookingCode ?? bookingId);
+  }
+
+  // QRIS dikirim sebagai pesan gambar (web: kartu QR, WhatsApp: foto QR).
+  for (const bookingId of turn.qrisBookingIds) {
+    const p = await prisma.payment.findUnique({
+      where: { bookingId },
+      select: { amount: true, qrUrl: true, expiredAt: true, booking: { select: { bookingCode: true } } },
+    });
+    if (!p?.qrUrl) continue;
+    const until = p.expiredAt ? ` · bayar sebelum ${jktParts(p.expiredAt).timeStr} WIB` : '';
+    replies.push(
+      await prisma.chatMessage.create({
+        data: {
+          sessionId,
+          sender: 'ai',
+          type: 'payment_qris',
+          message: `QRIS ${p.booking.bookingCode ?? ''} · Rp${p.amount.toLocaleString('id-ID')}${until}`,
+          attachmentUrl: p.qrUrl.startsWith('http') ? p.qrUrl : null,
+          bookingId,
+        },
+        include: messageInclude,
+      }),
+    );
   }
 
   const data: Prisma.ChatSessionUpdateInput = {

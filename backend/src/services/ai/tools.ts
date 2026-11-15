@@ -10,12 +10,15 @@ import {
   quotePrice,
   updateBookingStatus,
 } from '../booking.service';
+import { createQrisPayment, getPaymentStatus } from '../payment.service';
 import type { AgentConfig } from './context';
 
 export type ToolName =
   | 'check_availability'
   | 'quote_price'
   | 'create_booking'
+  | 'send_payment_qris'
+  | 'check_payment_status'
   | 'get_my_bookings'
   | 'cancel_my_booking'
   | 'get_promos'
@@ -29,7 +32,7 @@ export type ToolContext = {
   /** Mode uji (playground admin): tidak membuat / membatalkan booking sungguhan. */
   dryRun?: boolean;
   /** Hasil samping yang dikumpulkan selama satu giliran. */
-  state: { bookingIds: string[]; handoffReason?: string };
+  state: { bookingIds: string[]; handoffReason?: string; /** Booking yang QRIS-nya perlu dikirim sebagai gambar. */ qrisBookingIds: string[] };
 };
 
 // ---------------------------------------------------------------------
@@ -82,8 +85,33 @@ export const TOOL_DECLARATIONS: Record<ToolName, FunctionDeclaration> = {
         duration_hours: int('Durasi dalam jam.'),
         promo_code: str('Opsional. Kode promo.'),
         notes: str('Opsional. Catatan pelanggan (mis. jumlah pemain, game yang diminta).'),
+        payment_method: {
+          type: SchemaType.STRING,
+          format: 'enum',
+          enum: ['qris', 'cash'],
+          description: 'Metode bayar pilihan pelanggan: "qris" (QR dikirim otomatis) atau "cash" (bayar di kasir).',
+        },
       },
-      required: ['station_id', 'date', 'start_time', 'duration_hours'],
+      required: ['station_id', 'date', 'start_time', 'duration_hours', 'payment_method'],
+    },
+  },
+  check_payment_status: {
+    name: 'check_payment_status',
+    description:
+      'Cek status pembayaran QRIS LANGSUNG ke Midtrans. WAJIB dipanggil setiap kali pelanggan bilang sudah bayar/transfer atau menanyakan status bayar. Tanpa kode booking = booking terbaru pelanggan yang belum lunas.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: { booking_code: str('Opsional. Kode booking, mis. JA261116ABCD.') },
+    },
+  },
+  send_payment_qris: {
+    name: 'send_payment_qris',
+    description:
+      'Kirim (ulang) gambar QR QRIS untuk booking milik pelanggan yang belum dibayar. Pakai saat pelanggan minta QR lagi, QR kedaluwarsa, atau ingin ganti bayar via QRIS.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: { booking_code: str('Kode booking, mis. JA-20261115-0001.') },
+      required: ['booking_code'],
     },
   },
   get_my_bookings: {
@@ -221,11 +249,40 @@ const executors: Record<ToolName, (args: any, ctx: ToolContext) => Promise<unkno
       return { ok: false, error: 'AI tidak diizinkan membuat booking. Arahkan pelanggan booking lewat aplikasi atau admin.' };
     }
     if (!ctx.customerId) return { ok: false, error: 'Pelanggan harus login dulu untuk booking.' };
+    const method = String(args.payment_method ?? '').toLowerCase() === 'cash' ? 'cash' : 'qris';
+    const midtransReady = !!process.env.MIDTRANS_SERVER_KEY;
+    const wantsQris = method === 'qris' && midtransReady;
     const start = parseWhen(args.date, args.start_time);
     if (ctx.dryRun) {
-      return { ok: true, dry_run: true, message: 'Mode uji: booking tidak benar-benar dibuat.', booking_code: 'JA-TEST' };
+      return { ok: true, dry_run: true, message: 'Mode uji: booking tidak benar-benar dibuat.', booking_code: 'JA-TEST', payment_method: method };
     }
 
+    // Cegah booking ganda: pelanggan yang sama sudah punya booking aktif yang bentrok di jam ini
+    // (mis. pelanggan mengulang "ya/lanjut" setelah booking sudah dibuat).
+    const durationMs = Number(args.duration_hours) * 3_600_000;
+    const existing = await prisma.booking.findFirst({
+      where: {
+        customerId: ctx.customerId,
+        status: { in: ['pending', 'confirmed', 'checked_in'] },
+        startTime: { lt: new Date(start.getTime() + durationMs) },
+        endTime: { gt: start },
+      },
+      include: { station: { select: { name: true } }, payment: { select: { status: true } } },
+    });
+    if (existing) {
+      return {
+        ok: false,
+        already_booked: true,
+        booking_code: existing.bookingCode,
+        station: existing.station.name,
+        when: `${formatJkt(existing.startTime)} – ${jktParts(existing.endTime).timeStr} WIB`,
+        payment: existing.payment?.status === 'paid' ? 'lunas' : existing.status === 'pending' ? 'menunggu pembayaran' : 'bayar di kasir',
+        error:
+          'Pelanggan SUDAH punya booking di jam ini — jangan buat booking baru. Ingatkan kode booking tsb; jika belum dibayar dan pelanggan mau QRIS, panggil send_payment_qris.',
+      };
+    }
+
+    // QRIS → pending sampai dibayar. Cash → ikut pengaturan agent (default langsung terkonfirmasi).
     const { booking, promoWarning } = await createBooking({
       stationId: String(args.station_id),
       customerId: ctx.customerId,
@@ -235,12 +292,33 @@ const executors: Record<ToolName, (args: any, ctx: ToolContext) => Promise<unkno
       notes: args.notes || null,
       source: 'ai',
       channel: ctx.channel ?? 'web',
-      status: ctx.config.bookingStatus === 'pending' ? 'pending' : 'confirmed',
+      status: wantsQris || ctx.config.bookingStatus === 'pending' ? 'pending' : 'confirmed',
       chatSessionId: ctx.sessionId ?? null,
       enforceLead: true,
       strictPromo: false,
     });
     ctx.state.bookingIds.push(booking.id);
+
+    let payment_note: string;
+    let qris: Record<string, unknown> | null = null;
+    if (wantsQris && booking.totalPrice > 0) {
+      try {
+        const p = await createQrisPayment(booking.id);
+        ctx.state.qrisBookingIds.push(booking.id);
+        qris = { sent_as_image: true, amount: rupiah(p.amount), expires_at: p.expiredAt ? `${jktParts(p.expiredAt).timeStr} WIB` : null };
+        payment_note = 'Gambar QR QRIS dikirim otomatis setelah balasanmu. Booking terkonfirmasi otomatis setelah dibayar; jika lewat batas waktu, booking batal.';
+      } catch (e: any) {
+        await updateBookingStatus(booking.id, 'confirmed', { actor: 'system' }).catch(() => undefined);
+        payment_note = `QRIS gagal dibuat (${e?.message ?? 'error'}). Booking dikonfirmasi, pembayaran di kasir saat datang.`;
+      }
+    } else if (wantsQris) {
+      await updateBookingStatus(booking.id, 'confirmed', { actor: 'system' }).catch(() => undefined);
+      payment_note = 'Total Rp0, tidak perlu pembayaran. Booking terkonfirmasi.';
+    } else if (method === 'qris') {
+      payment_note = 'QRIS belum tersedia di rental ini. Booking dibuat dengan pembayaran di kasir.';
+    } else {
+      payment_note = 'Bayar cash di kasir saat datang. Tunjukkan kode booking ke kasir.';
+    }
 
     return {
       ok: true,
@@ -251,11 +329,70 @@ const executors: Record<ToolName, (args: any, ctx: ToolContext) => Promise<unkno
       total: rupiah(booking.totalPrice),
       discount: rupiah(booking.discount),
       promo_warning: promoWarning,
-      payment_note:
-        booking.status === 'pending'
-          ? 'Booking menunggu pembayaran QRIS di aplikasi. Jika tidak dibayar akan batal otomatis.'
-          : 'Booking terkonfirmasi. Pembayaran bisa di kasir saat datang atau QRIS di aplikasi.',
+      payment_method: wantsQris ? 'qris' : 'cash',
+      qris,
+      payment_note,
     };
+  },
+
+  async check_payment_status(args, ctx) {
+    if (!ctx.customerId) return { ok: false, error: 'Pelanggan belum login.' };
+    const code = String(args.booking_code ?? '').trim().toUpperCase();
+    const booking = await prisma.booking.findFirst({
+      where: code
+        ? { customerId: ctx.customerId, bookingCode: code }
+        : { customerId: ctx.customerId, status: { in: ['pending', 'confirmed'] }, payment: { isNot: null } },
+      include: { payment: true, station: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!booking) return { ok: false, error: code ? `Booking ${code} tidak ditemukan.` : 'Tidak ada booking dengan tagihan pembayaran.' };
+    if (!booking.payment) {
+      return { ok: true, booking_code: booking.bookingCode, paid: false, status: 'tidak ada tagihan QRIS', note: 'Booking ini dibayar di kasir saat datang.' };
+    }
+    // Status diambil ulang dari Midtrans (bukan dari pengakuan pelanggan). Jika memang lunas, booking otomatis terkonfirmasi.
+    const p = await getPaymentStatus(booking.id);
+    const paid = p.status === 'paid';
+    return {
+      ok: true,
+      booking_code: booking.bookingCode,
+      station: booking.station.name,
+      amount: rupiah(p.amount),
+      paid,
+      status: p.status,
+      expires_at: !paid && p.expiredAt ? `${jktParts(p.expiredAt).timeStr} WIB` : null,
+      instruction: paid
+        ? 'Pembayaran SUDAH diterima sistem. Sampaikan booking terkonfirmasi.'
+        : p.status === 'expired' || p.status === 'failed'
+          ? 'QR sudah kedaluwarsa/gagal. Tawarkan kirim QR baru (send_payment_qris). Jangan katakan lunas.'
+          : 'Pembayaran BELUM diterima sistem. JANGAN katakan sudah lunas/terkonfirmasi. Minta pelanggan pastikan transaksi berhasil di aplikasi e-wallet/m-banking lalu tunggu ±1 menit; jika yakin sudah terpotong saldo, tawarkan meneruskan bukti bayar ke admin (handoff_to_admin).',
+    };
+  },
+
+  async send_payment_qris(args, ctx) {
+    if (!ctx.customerId) return { ok: false, error: 'Pelanggan belum login.' };
+    if (!process.env.MIDTRANS_SERVER_KEY) return { ok: false, error: 'QRIS belum tersedia di rental ini. Pembayaran di kasir.' };
+    const code = String(args.booking_code ?? '').trim().toUpperCase();
+    const booking = await prisma.booking.findFirst({
+      where: { customerId: ctx.customerId, bookingCode: code },
+      include: { payment: true },
+    });
+    if (!booking) return { ok: false, error: `Booking ${code} tidak ditemukan untuk pelanggan ini.` };
+    if (booking.payment?.status === 'paid') return { ok: false, error: 'Booking ini sudah lunas.' };
+    if (!['pending', 'confirmed'].includes(booking.status)) return { ok: false, error: `Booking berstatus ${booking.status}, tidak bisa dibayar.` };
+    if (ctx.dryRun) return { ok: true, dry_run: true, message: 'Mode uji: QR tidak benar-benar dikirim.' };
+    try {
+      const p = await createQrisPayment(booking.id);
+      ctx.state.qrisBookingIds.push(booking.id);
+      return {
+        ok: true,
+        booking_code: booking.bookingCode,
+        amount: rupiah(p.amount),
+        expires_at: p.expiredAt ? `${jktParts(p.expiredAt).timeStr} WIB` : null,
+        note: 'Gambar QR dikirim otomatis setelah balasanmu.',
+      };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Gagal membuat QRIS' };
+    }
   },
 
   async get_my_bookings(_args, ctx) {

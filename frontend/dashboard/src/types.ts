@@ -231,7 +231,9 @@ export interface ChatMessage {
     endTime: string;
     totalPrice: number;
     station: { name: string };
+    payment?: { status: string; method: string; amount: number; qrUrl: string | null; expiredAt: string | null } | null;
   } | null;
+  attachmentUrl?: string | null;
 }
 
 export interface QuickReply {
@@ -377,4 +379,40 @@ export interface WaStatus {
   lastError: string | null;
   hasSession: boolean;
   config: WaConfig;
+}
+
+// ---------------------------------------------------------------- Copywriter poster (AI)
+export type CaptionPlatform = "instagram" | "tiktok" | "facebook" | "whatsapp";
+export type CaptionTone = "friendly" | "hype" | "elegan" | "lucu";
+
+export interface PosterAnalysis {
+  poster_type: string;
+  headline: string;
+  summary: string;
+  detected_text: string;
+  key_points: string[];
+  visual_style: string;
+  target_audience: string;
+  missing_info: string[];
+}
+
+export interface CaptionVariant {
+  angle: string;
+  caption: string;
+  hashtags: string[];
+  cta: string;
+}
+
+export interface PosterCaption {
+  id: string;
+  platform: CaptionPlatform;
+  tone: CaptionTone;
+  notes: string | null;
+  imageUrl: string;
+  model: string;
+  analysis: PosterAnalysis;
+  captions: CaptionVariant[];
+  best_time: string;
+  poster_tips: string[];
+  createdAt: string;
 }

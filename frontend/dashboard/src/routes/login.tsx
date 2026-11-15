@@ -60,7 +60,7 @@ function LoginPage() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><CalendarDays className="w-4 h-4" /></span>Kalender unit anti bentrok</li>
             <li className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><MessageSquare className="w-4 h-4" /></span>Live chat dengan handoff AI → admin</li>
-            <li className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><Bot className="w-4 h-4" /></span>Insight & promo otomatis dari Gemini</li>
+            <li className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><Bot className="w-4 h-4" /></span>Insight & promo otomatis</li>
           </ul>
         </div>
         <p className="text-xs text-indigo-200">© JadwalAn · Panel admin</p>
@@ -121,7 +121,6 @@ function LoginPage() {
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? "Memeriksa..." : "Masuk"}
           </button>
-          <p className="text-xs text-slate-400 text-center">5x gagal login akan dikunci 15 menit.</p>
         </form>
       </div>
     </div>

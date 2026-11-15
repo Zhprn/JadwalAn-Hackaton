@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import bcrypt from 'bcrypt';
 import pino from 'pino';
+import QRCode from 'qrcode';
 import {
   Browsers,
   DisconnectReason,
@@ -15,6 +16,7 @@ import {
 import prisma from '../lib/prisma';
 import { outbound } from '../lib/outbound';
 import { HttpError } from '../lib/http';
+import { jktParts } from '../lib/time';
 import { logActivity } from '../lib/activity';
 import { DEFAULT_WA_CONFIG, fmtBookingWa, getWaConfig, type WaConfig } from './notify.service';
 import { getOrCreateCustomerSession, handleCustomerMessage } from './chat.service';
@@ -262,11 +264,64 @@ const rawSend = async (jid: string, text: string) => {
   lastSentAt = Date.now();
 };
 
+/** Nomor pelanggan data demo (prisma/seed-demo.ts) — pesan tidak pernah benar-benar dikirim. */
+const DEMO_PHONE_PREFIX = '62899000';
+
 /** Kirim teks ke nomor (format 62xxx / 08xxx). Diantrikan berurutan. */
 export const sendWhatsAppText = (phone: string, text: string): Promise<void> => {
+  if (phone.replace(/\D/g, '').startsWith(DEMO_PHONE_PREFIX)) {
+    console.log(`[wa] (demo) pesan ke ${phone} disimulasikan, tidak dikirim`);
+    return Promise.resolve();
+  }
   const job = queue.then(() => rawSend(toJid(phone), text));
   queue = job.catch(() => undefined);
   return job;
+};
+
+const rawSendImage = async (jid: string, image: Buffer, caption: string) => {
+  if (!sock || state.status !== 'connected') throw new HttpError(503, 'WhatsApp belum terhubung. Scan QR di Pengaturan → WhatsApp.');
+  const wait = lastSentAt + MIN_GAP_MS + Math.random() * 1000 - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  await sock.sendMessage(jid, { image, caption, mimetype: 'image/png' });
+  lastSentAt = Date.now();
+};
+
+/** Kirim gambar ke JID (diantrikan bersama pesan teks agar urutannya terjaga). */
+const sendImageToJid = (jid: string, image: Buffer, caption: string): Promise<void> => {
+  const job = queue.then(() => rawSendImage(jid, image, caption));
+  queue = job.catch(() => undefined);
+  return job;
+};
+
+/**
+ * Gambar QR QRIS untuk sebuah booking. Utamakan qr_string Midtrans (dirender lokal → tajam & tanpa unduhan),
+ * kalau tidak ada unduh gambar dari URL QR Midtrans.
+ */
+const buildQrisImage = async (bookingId: string) => {
+  const p = await prisma.payment.findUnique({
+    where: { bookingId },
+    include: { booking: { include: { station: true } } },
+  });
+  if (!p?.qrUrl || p.status !== 'pending') return null;
+
+  const qrString = (p.rawResponse as { qr_string?: string } | null)?.qr_string;
+  let image: Buffer | null = null;
+  if (qrString) {
+    image = await QRCode.toBuffer(qrString, { type: 'png', width: 640, margin: 2, errorCorrectionLevel: 'M' });
+  } else if (p.qrUrl.startsWith('http')) {
+    const res = await fetch(p.qrUrl, { signal: AbortSignal.timeout(10_000) });
+    if (res.ok) image = Buffer.from(await res.arrayBuffer());
+  } else {
+    image = await QRCode.toBuffer(p.qrUrl, { type: 'png', width: 640, margin: 2 });
+  }
+  if (!image) return null;
+
+  const b = p.booking;
+  const until = p.expiredAt ? `\n⏳ Bayar sebelum *${jktParts(p.expiredAt).timeStr} WIB*` : '';
+  const caption =
+    `💳 *QRIS Pembayaran*\n\n🔖 Kode: *${b.bookingCode ?? '-'}*\n🎮 ${b.station.name}\n💰 Total: *Rp${p.amount.toLocaleString('id-ID')}*${until}\n\n` +
+    'Scan pakai GoPay, OVO, DANA, ShopeePay, atau m-banking. Booking terkonfirmasi otomatis setelah pembayaran berhasil ✅';
+  return { image, caption };
 };
 
 /** Kirim ke JID asli (untuk membalas chat masuk, termasuk alamat @lid). */
@@ -306,6 +361,12 @@ const extractText = (m: WAMessage) => {
   );
 };
 
+// Password acak 8 karakter (tanpa karakter yang mudah tertukar: 0/O, 1/l/I).
+const genWaPassword = () => {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from(crypto.randomBytes(8), (b) => chars[b % chars.length]).join('');
+};
+
 async function handleIncoming(m: WAMessage) {
   if (!m.message || m.key.fromMe) return;
   const jid = m.key.remoteJid;
@@ -332,15 +393,31 @@ async function handleIncoming(m: WAMessage) {
 
   // Pelanggan dikenali dari nomor WA; jika belum terdaftar dibuatkan akun otomatis.
   let customer = await prisma.customer.findUnique({ where: { whatsapp: phone } });
+  let newPassword: string | null = null;
   if (!customer) {
+    newPassword = genWaPassword();
     customer = await prisma.customer.create({
       data: {
         name: (m.pushName || '').trim().slice(0, 60) || `Pelanggan ${phone.slice(-4)}`,
         whatsapp: phone,
-        password: await bcrypt.hash(crypto.randomBytes(12).toString('hex'), 10),
+        password: await bcrypt.hash(newPassword, 10),
         tags: ['whatsapp'],
       },
     });
+  }
+
+  if (newPassword) {
+    await sendToJid(
+      jid,
+      `Halo kak ${customer.name} 👋
+
+Sepertinya ini pertama kalinya kakak chat di sini, jadi kami sudah membuatkan akun untuk login ke website:
+
+📱 Nomor WhatsApp: ${phone}
+🔑 Password: ${newPassword}
+
+Silakan login dan ganti password di halaman Profil ya. Sekarang, ada yang bisa kami bantu? 😊`,
+    ).catch(() => undefined);
   }
 
   const { session } = await getOrCreateCustomerSession(customer.id, 'whatsapp', { silentGreeting: true });
@@ -363,7 +440,15 @@ async function handleIncoming(m: WAMessage) {
     if (r.sender === 'ai' && r.type === 'text') await sendToJid(jid, r.message);
     else if (r.type === 'booking_card' && r.bookingId) {
       const b = await prisma.booking.findUnique({ where: { id: r.bookingId }, include: { station: true } });
-      if (b) await sendToJid(jid, fmtBookingWa(b, 'confirmed'));
+      if (b) await sendToJid(jid, fmtBookingWa(b, b.status === 'pending' ? 'pending' : 'confirmed'));
+    } else if (r.type === 'payment_qris' && r.bookingId) {
+      try {
+        const qr = await buildQrisImage(r.bookingId);
+        if (qr) await sendImageToJid(jid, qr.image, qr.caption);
+      } catch (e: any) {
+        console.error('[wa] Gagal kirim gambar QRIS:', e?.message);
+        await sendToJid(jid, 'Maaf kak, gambar QRIS gagal terkirim. Ketik "kirim qris lagi" ya, atau bayar di kasir saat datang 🙏').catch(() => undefined);
+      }
     }
   }
 }

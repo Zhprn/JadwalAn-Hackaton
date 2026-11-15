@@ -127,7 +127,18 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    /* Cegah halaman "memantul"/scroll melewati batas konten (elastic overscroll). */
+    overscroll-behavior: none;
+  }
   body {
     @apply bg-background text-foreground font-jakarta antialiased;
+  }
+  /* Area scroll di dalam halaman (chat, sidebar, tabel) tidak ikut menggulung halaman saat mentok. */
+  [class*="overflow-y-auto"],
+  [class*="overflow-auto"],
+  [class*="overflow-x-auto"] {
+    overscroll-behavior: contain;
   }
 }

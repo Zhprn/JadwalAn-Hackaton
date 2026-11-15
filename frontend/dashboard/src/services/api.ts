@@ -24,6 +24,9 @@ import type {
   StoreSetting,
   WaConfig,
   WaStatus,
+  CaptionPlatform,
+  CaptionTone,
+  PosterCaption,
 } from "@/types";
 
 type Q = Record<string, string | number | boolean | undefined | null>;
@@ -192,4 +195,20 @@ export const whatsappApi = {
   logout: () => apiClient.post<WaStatus>("/whatsapp/logout"),
   config: (data: Partial<WaConfig>) => apiClient.put<WaConfig>("/whatsapp/config", data),
   test: (to: string, message: string) => apiClient.post("/whatsapp/test", { to, message }),
+};
+
+export const copywriterApi = {
+  /** Unggah poster → analisis + 1 caption langsung ke promo. */
+  generate: (data: { image: File; platform: CaptionPlatform; tone: CaptionTone; notes?: string }) => {
+    const form = new FormData();
+    form.append("image", data.image);
+    form.append("platform", data.platform);
+    form.append("tone", data.tone);
+    if (data.notes?.trim()) form.append("notes", data.notes.trim());
+    return apiClient.post<PosterCaption>("/ai/copywriter/poster", form);
+  },
+  regenerate: (id: string, data: { platform?: CaptionPlatform; tone?: CaptionTone; notes?: string | null }) =>
+    apiClient.post<PosterCaption>(`/ai/copywriter/history/${id}/regenerate`, data),
+  history: () => apiClient.get<PosterCaption[]>("/ai/copywriter/history"),
+  remove: (id: string) => apiClient.delete(`/ai/copywriter/history/${id}`),
 };

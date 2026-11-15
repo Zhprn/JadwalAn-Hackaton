@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio",
     "db:push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
+    "seed:demo": "tsx prisma/seed-demo.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -46,6 +47,7 @@
     "pino-pretty": "^13.2.0",
     "puppeteer": "^25.16.0",
     "puppeteer-core": "^25.16.0",
+    "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.3.0",
     "zod": "^4.6.7"
   },
@@ -61,6 +63,7 @@
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.5",
     "@types/swagger-jsdoc": "^6.0.4",
     "nodemon": "^3.1.14",
     "prisma": "^6.19.3",

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Send, Bot, CalendarDays, ArrowUpRight, Hand, CheckCheck, RotateCcw, Lock, Unlock, Headphones, MessageSquare, Sparkles } from "lucide-react";
+import { Search, Send, Bot, CalendarDays, ArrowUpRight, Hand, CheckCheck, RotateCcw, Lock, Unlock, Headphones, MessageSquare, Sparkles, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { chatApi } from "@/services/api";
 import { Avatar, EmptyState, SessionBadge, Spinner, StatusBadge, TierBadge } from "@/components/common";
@@ -314,6 +314,38 @@ function Bubble({ m, onOpenBooking }: { m: ChatMessage; onOpenBooking: (id: stri
     return (
       <div className="flex justify-center">
         <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{m.message}</span>
+      </div>
+    );
+  }
+  if (m.type === "payment_qris" && m.booking) {
+    const b = m.booking;
+    const st = b.payment?.status ?? "pending";
+    return (
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={() => onOpenBooking(b.id)}
+          className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 w-full max-w-[90%] flex items-center justify-between hover:bg-indigo-100/50 transition-colors text-left"
+        >
+          <div className="flex items-center gap-3">
+            {m.attachmentUrl ? (
+              <img src={m.attachmentUrl} alt="QRIS" className="w-10 h-10 rounded-md border border-indigo-100 bg-white object-contain" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <QrCode className="w-4 h-4" />
+              </div>
+            )}
+            <div>
+              <h4 className="text-xs font-bold text-indigo-800">
+                QRIS dikirim AI · <span className="font-mono">{b.bookingCode}</span>
+              </h4>
+              <p className="text-[10px] text-indigo-600/80 mt-0.5">{m.message}</p>
+            </div>
+          </div>
+          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", st === "paid" ? "bg-emerald-100 text-emerald-700" : st === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600")}>
+            {st === "paid" ? "Lunas" : st === "pending" ? "Menunggu bayar" : st}
+          </span>
+        </button>
       </div>
     );
   }

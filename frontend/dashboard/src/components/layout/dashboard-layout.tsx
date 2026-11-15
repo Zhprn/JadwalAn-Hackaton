@@ -13,9 +13,7 @@ import {
   Menu,
   X,
   Loader2,
-  Gamepad2,
-  ChevronDown,
-} from "lucide-react";
+  ChevronDown, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import Topbar from "../Topbar";
 import logo from "../../assets/LogoJadwalan.svg";
@@ -52,10 +50,11 @@ export default function DashboardLayout() {
     { title: "Manajemen Kalender", href: "/dashboard/calender", icon: Calendar },
     { title: "Daftar Booking", href: "/dashboard/bookings", icon: ClipboardList, badge: summary?.pendingPayments },
     { title: "Manajemen Promo", href: "/dashboard/promo", icon: BadgePercent },
-    { title: "Customer Re-Engagement", href: "/dashboard/costumer", icon: Sparkles, ai: true },
+    { title: "Customer Re-Engagement", href: "/dashboard/costumer", icon: Sparkles},
+    { title: "Copywriter AI", href: "/dashboard/copywriter", icon: PenLine},
   ];
   const systemNav: NavItem[] = [
-    { title: "Pengaturan AI", href: "/dashboard/ai", icon: Bot, ai: true },
+    { title: "Pengaturan AI", href: "/dashboard/ai", icon: Bot},
     { title: "Pengaturan", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -109,8 +108,7 @@ export default function DashboardLayout() {
       {/* Header Mobile */}
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden">
         <div className="flex items-center gap-2">
-          <Gamepad2 className="h-6 w-6 text-indigo-600" />
-          <span className="text-lg font-bold text-gray-900">JadwalAn</span>
+          <img src={logo} alt="Logo JadwalAn" className="h-8 w-40 object-contain object-left" />
         </div>
         <button type="button" onClick={() => setIsOpen(true)} aria-label="Buka menu" className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
           <Menu className="h-5 w-5" />

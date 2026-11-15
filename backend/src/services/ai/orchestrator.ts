@@ -4,6 +4,8 @@ import { buildCustomerContext, buildStoreContext, buildTimeContext, getAgentConf
 import { chatWithTools, FAST_MODEL, generateJson, isAiConfigured, toGeminiHistory, type ToolCallLog, type Usage } from './gemini';
 import { writeAiLog } from './log';
 import { executeTool, TOOL_DECLARATIONS, type ToolContext } from './tools';
+import { normalizeMessage } from './normalize';
+import { formatJkt, jktParts } from '../../lib/time';
 
 export type HistoryItem = { role: 'user' | 'model'; text: string };
 
@@ -27,6 +29,8 @@ export type ChatTurnResult = {
   handoff: boolean;
   handoffReason?: string;
   bookingIds: string[];
+  /** Booking yang QR QRIS-nya harus dikirim sebagai gambar setelah balasan. */
+  qrisBookingIds: string[];
   toolCalls: ToolCallLog[];
   model: string;
   latencyMs: number;
@@ -39,8 +43,8 @@ const HANDOFF_REPLY = 'Baik kak, percakapan ini aku teruskan ke admin ya. Mohon 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Router: aturan dulu (instan), kalau ragu pakai model cepat. */
-const decideRoute = async (input: ChatTurnInput, usage: Usage): Promise<RouteDecision> => {
-  const byRule = routeByRules(input.message, input.previousIntent);
+const decideRoute = async (input: ChatTurnInput, text: string, usage: Usage): Promise<RouteDecision> => {
+  const byRule = routeByRules(text, input.previousIntent) ?? (text !== input.message ? routeByRules(input.message, input.previousIntent) : null);
   if (byRule) return byRule;
   try {
     const recent = input.history
@@ -50,7 +54,9 @@ const decideRoute = async (input: ChatTurnInput, usage: Usage): Promise<RouteDec
     const { data, usage: u } = await generateJson<{ agent: RouteDecision['agent']; intent: Intent; priority: 'normal' | 'high' }>({
       model: FAST_MODEL,
       system: ROUTER_SYSTEM,
-      prompt: `${recent ? `Percakapan sebelumnya:\n${recent}\n\n` : ''}Pesan terakhir pelanggan: ${input.message}`,
+      prompt: `${recent ? `Percakapan sebelumnya:\n${recent}\n\n` : ''}Pesan terakhir pelanggan: ${input.message}${
+        text !== input.message ? `\n(kemungkinan maksud: ${text})` : ''
+      }`,
       schema: ROUTER_SCHEMA,
       temperature: 0,
       maxTokens: 100,
@@ -64,6 +70,44 @@ const decideRoute = async (input: ChatTurnInput, usage: Usage): Promise<RouteDec
   }
 };
 
+/** Konteks lanjutan: ringkasan percakapan sebelumnya + booking aktif/belum dibayar pelanggan. */
+const buildSessionContext = async (sessionId?: string | null, customerId?: string | null) => {
+  const [session, bookings] = await Promise.all([
+    sessionId ? prisma.chatSession.findUnique({ where: { id: sessionId }, select: { summary: true, intent: true } }) : null,
+    customerId
+      ? prisma.booking.findMany({
+          where: { customerId, status: { in: ['pending', 'confirmed'] }, endTime: { gt: new Date() } },
+          orderBy: { startTime: 'asc' },
+          take: 3,
+          select: {
+            bookingCode: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            totalPrice: true,
+            station: { select: { name: true } },
+            payment: { select: { status: true, method: true } },
+          },
+        })
+      : [],
+  ]);
+  const lines: string[] = [];
+  if (session?.summary) lines.push(`RINGKASAN PERCAKAPAN SEBELUMNYA: ${session.summary}`);
+  if (bookings.length) {
+    lines.push(
+      'BOOKING AKTIF PELANGGAN:\n' +
+        bookings
+          .map((b) => {
+            const paid = b.payment?.status === 'paid';
+            const pay = paid ? 'lunas' : b.status === 'pending' ? 'MENUNGGU PEMBAYARAN' : 'bayar di kasir';
+            return `- ${b.bookingCode} · ${b.station.name} · ${formatJkt(b.startTime)}–${jktParts(b.endTime).timeStr} · Rp${b.totalPrice.toLocaleString('id-ID')} · ${pay}`;
+          })
+          .join('\n'),
+    );
+  }
+  return lines.length ? `\n\n${lines.join('\n\n')}` : '';
+};
+
 /** Proses satu pesan pelanggan melalui pipeline multi-agent. */
 export const runChatTurn = async (input: ChatTurnInput): Promise<ChatTurnResult> => {
   const t0 = Date.now();
@@ -72,6 +116,7 @@ export const runChatTurn = async (input: ChatTurnInput): Promise<ChatTurnResult>
 
   const base = {
     bookingIds: [] as string[],
+    qrisBookingIds: [] as string[],
     toolCalls: [] as ToolCallLog[],
     usage,
     model: config.model,
@@ -116,11 +161,14 @@ export const runChatTurn = async (input: ChatTurnInput): Promise<ChatTurnResult>
   }
 
   // 3) Router + pemuatan konteks berjalan paralel.
-  const [route, store, customer, knowledge] = await Promise.all([
-    decideRoute(input, usage),
+  // Pesan typo/singkat dinormalisasi dulu ("bsk bkg ps5 jm7" → "besok booking PS5 jam 7").
+  const norm = await normalizeMessage(input.message);
+  const [route, store, customer, knowledge, sessionCtx] = await Promise.all([
+    decideRoute(input, norm.text, usage),
     buildStoreContext(),
     buildCustomerContext(input.customerId),
-    searchKnowledge(input.message),
+    searchKnowledge(norm.changed ? `${input.message} ${norm.text}` : input.message),
+    buildSessionContext(input.sessionId, input.customerId),
   ]);
   const agent = AGENTS[route.agent];
 
@@ -140,11 +188,12 @@ ${agent.instructions}
 ${buildTimeContext()}
 ${customer}
 
-${store}${knowledgeBlock}`;
+${store}${knowledgeBlock}${sessionCtx}`;
 
   // 4) Agent spesialis dengan function calling.
-  const { history, carry } = toGeminiHistory(input.history.slice(-14));
-  const message = carry.length ? `${carry.join('\n')}\n${input.message}` : input.message;
+  const { history, carry } = toGeminiHistory(input.history.slice(-20));
+  const hint = norm.changed ? `\n\n[KEMUNGKINAN MAKSUD PELANGGAN: ${norm.text}]` : '';
+  const message = `${carry.length ? `${carry.join('\n')}\n` : ''}${input.message}${hint}`;
 
   const toolCtx: ToolContext = {
     customerId: input.customerId,
@@ -152,7 +201,7 @@ ${store}${knowledgeBlock}`;
     channel: input.channel,
     config,
     dryRun: input.dryRun,
-    state: { bookingIds: [] },
+    state: { bookingIds: [], qrisBookingIds: [] },
   };
   const tools = agent.tools
     .filter((t) => t !== 'create_booking' || config.canCreateBooking)
@@ -184,6 +233,7 @@ ${store}${knowledgeBlock}`;
       handoff,
       handoffReason: toolCtx.state.handoffReason,
       bookingIds: toolCtx.state.bookingIds,
+      qrisBookingIds: [...new Set(toolCtx.state.qrisBookingIds)],
       toolCalls: out.toolCalls,
       model: out.model,
       latencyMs: Date.now() - t0,
@@ -197,6 +247,7 @@ ${store}${knowledgeBlock}`;
     const result: ChatTurnResult = {
       ...base,
       bookingIds: toolCtx.state.bookingIds,
+      qrisBookingIds: [...new Set(toolCtx.state.qrisBookingIds)],
       reply: config.fallbackMessage || HANDOFF_REPLY,
       agent: agent.kind,
       intent: route.intent,

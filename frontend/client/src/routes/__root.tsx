@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { createRootRouteWithContext, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Gamepad2, Home, CalendarPlus, CalendarCheck, TicketPercent, User, LogOut } from "lucide-react";
+import { MessageSquare, Home, CalendarPlus, CalendarCheck, TicketPercent, User, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChatModal } from "@/components/ChatModal";
 import { useAuth, type AuthState } from "@/auth";
 import { authApi } from "@/services/api";
 import { initials } from "@/lib/format";
+import logo from "../assets/LogoJadwalan.svg";
 
 export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
   component: RootComponent,
@@ -43,7 +44,7 @@ function RootComponent() {
     <div className="min-h-screen bg-white font-sans text-slate-900 relative pb-20 md:pb-0">
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100 px-4 md:px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-indigo-700 font-extrabold text-xl tracking-tight">
-          <Gamepad2 className="w-6 h-6" /> JadwalAn
+          <img src={logo} alt="Logo JadwalAn" className="h-8 w-40 object-contain object-left" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 font-semibold text-sm text-slate-500">

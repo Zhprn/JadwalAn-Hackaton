@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Bot, Headphones, Send, Maximize2, Minimize2, CalendarDays, ArrowUpRight, Loader2, LogIn } from "lucide-react";
+import { X, Bot, Headphones, Send, Maximize2, Minimize2, CalendarDays, ArrowUpRight, Loader2, LogIn, QrCode, CheckCircle2, Clock } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/auth";
-import { chatApi, publicApi } from "@/services/api";
+import { chatApi, paymentApi, publicApi } from "@/services/api";
 import { useQuery } from "@tanstack/react-query";
 import { errorMessage } from "@/lib/api-client";
 import { fmtDateLong, fmtRange, fmtTime, rupiah } from "@/lib/format";
@@ -258,6 +259,7 @@ function MessageBubble({ m, onNavigate }: { m: ChatMessage; onNavigate: () => vo
       </div>
     );
   }
+  if (m.type === "payment_qris" && m.booking) return <QrisCard m={m} onNavigate={onNavigate} />;
   if (m.type === "booking_card" && m.booking) {
     const b = m.booking;
     return (
@@ -302,6 +304,68 @@ function MessageBubble({ m, onNavigate }: { m: ChatMessage; onNavigate: () => vo
         {m.message}
       </div>
       <span className="text-[9px] text-slate-400 ml-1">{fmtTime(m.createdAt)}</span>
+    </div>
+  );
+}
+
+/** Kartu QR QRIS yang dikirim AI setelah booking dibuat. Status dicek berkala sampai lunas. */
+function QrisCard({ m, onNavigate }: { m: ChatMessage; onNavigate: () => void }) {
+  const b = m.booking!;
+  const initial = b.payment;
+  const status = useQuery({
+    queryKey: ["payment", b.id],
+    queryFn: () => paymentApi.status(b.id),
+    refetchInterval: (q) => (q.state.data?.status ?? initial?.status) === "pending" ? 5000 : false,
+    enabled: initial?.status === "pending",
+  });
+  const p = status.data ?? initial;
+  const qr = p?.qrUrl ?? m.attachmentUrl ?? null;
+  const paid = p?.status === "paid";
+  const expired = p?.status === "expired" || (!!p?.expiredAt && new Date(p.expiredAt).getTime() < Date.now() && !paid);
+
+  return (
+    <div className="flex justify-start">
+      <div className="border border-slate-200 rounded-2xl p-4 w-[260px] bg-white">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <QrCode className="w-4 h-4 text-indigo-600" /> QRIS Pembayaran
+          </span>
+          <span className="font-mono text-[10px] font-bold text-slate-400">{b.bookingCode}</span>
+        </div>
+        <div className={`relative rounded-xl border border-slate-100 bg-white p-2 flex items-center justify-center ${paid || expired ? "opacity-30" : ""}`}>
+          {qr?.startsWith("http") ? (
+            <img src={qr} alt={`QRIS ${b.bookingCode}`} className="w-[200px] h-[200px] object-contain" />
+          ) : qr ? (
+            <QRCodeSVG value={qr} size={200} level="M" />
+          ) : (
+            <span className="text-xs text-slate-400 py-16">QR belum tersedia</span>
+          )}
+        </div>
+        {paid && (
+          <p className="mt-2 text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" /> Lunas — booking terkonfirmasi
+          </p>
+        )}
+        {!paid && expired && <p className="mt-2 text-xs font-bold text-rose-500">QR kedaluwarsa. Ketik "kirim qris lagi".</p>}
+        <div className="mt-3 flex items-center justify-between">
+          <span className="font-extrabold text-slate-900">{rupiah(p?.amount ?? b.totalPrice)}</span>
+          {!paid && !expired && p?.expiredAt && (
+            <span className="text-[10px] text-slate-500 flex items-center gap-1">
+              <Clock className="w-3 h-3" /> s/d {fmtTime(p.expiredAt)}
+            </span>
+          )}
+        </div>
+        {!paid && (
+          <Link
+            to="/bayar/$bookingId"
+            params={{ bookingId: b.id }}
+            onClick={onNavigate}
+            className="mt-3 block text-center text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl py-2"
+          >
+            Buka halaman bayar
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

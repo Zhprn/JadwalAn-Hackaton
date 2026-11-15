@@ -15,22 +15,25 @@ export const summary = async (req: AuthRequest, res: Response): Promise<any> => 
   const yesterday = addDays(day, -1);
 
   const now = new Date();
-  // Query dijalankan berurutan: endpoint ini di-polling, jadi jangan memborong pool koneksi.
+  // Metrik dihitung dengan query berurutan (computeRangeMetrics); sisanya paralel di bawah.
   const [prev, today] = await computeRangeMetrics(yesterday, day);
-  const upcoming = await prisma.booking.findMany({
-    where: { status: { in: ['pending', 'confirmed'] }, startTime: { gte: now } },
-    include: bookingInclude,
-    orderBy: { startTime: 'asc' },
-    take: 8,
-  });
-  const nowPlaying = await prisma.booking.findMany({
-    where: { status: 'checked_in', startTime: { lte: now }, endTime: { gte: now } },
-    include: bookingInclude,
-    orderBy: { endTime: 'asc' },
-  });
-  const chats = await prisma.chatSession.groupBy({ by: ['status'], where: { status: { not: 'closed' } }, _count: { _all: true } });
-  const pendingPayments = await prisma.booking.count({ where: { status: 'pending' } });
-  const unreadNotifs = await prisma.notification.count({ where: { isRead: false, OR: [{ userId: null }, { userId: req.user!.id }] } });
+  // 5 query kecil yang saling lepas → paralel (cukup ringan untuk pool 10 koneksi, ±3 dtk lebih cepat).
+  const [upcoming, nowPlaying, chats, pendingPayments, unreadNotifs] = await Promise.all([
+    prisma.booking.findMany({
+      where: { status: { in: ['pending', 'confirmed'] }, startTime: { gte: now } },
+      include: bookingInclude,
+      orderBy: { startTime: 'asc' },
+      take: 8,
+    }),
+    prisma.booking.findMany({
+      where: { status: 'checked_in', startTime: { lte: now }, endTime: { gte: now } },
+      include: bookingInclude,
+      orderBy: { endTime: 'asc' },
+    }),
+    prisma.chatSession.groupBy({ by: ['status'], where: { status: { not: 'closed' } }, _count: { _all: true } }),
+    prisma.booking.count({ where: { status: 'pending' } }),
+    prisma.notification.count({ where: { isRead: false, OR: [{ userId: null }, { userId: req.user!.id }] } }),
+  ]);
 
   const pct = (a: number, b: number) => (b ? Math.round(((a - b) / b) * 100) : a ? 100 : 0);
 

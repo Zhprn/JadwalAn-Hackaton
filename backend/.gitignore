@@ -5,3 +5,6 @@ dist
 
 # Sesi WhatsApp (berisi kunci login perangkat — JANGAN di-commit)
 .wa-session
+
+# File unggahan (poster copywriter)
+uploads

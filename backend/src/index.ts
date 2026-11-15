@@ -12,6 +12,7 @@ import { errorMiddleware, notFoundMiddleware } from './lib/http';
 import { startScheduler } from './jobs/scheduler';
 import { autoStartWhatsApp } from './services/whatsapp.service';
 import prisma from './lib/prisma';
+import { UPLOAD_ROOT } from './services/ai/copywriter';
 
 // Supabase pooler hanya mendukung IPv4
 dns.setDefaultResultOrder('ipv4first');
@@ -43,6 +44,15 @@ app.use(
 app.use(compression());
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
+// File unggahan (poster copywriter). CORP cross-origin supaya gambar bisa tampil di dashboard (beda port/domain).
+app.use(
+  '/uploads',
+  (_req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(UPLOAD_ROOT, { maxAge: '7d', index: false }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 const openapiSpec = swaggerJsdoc({

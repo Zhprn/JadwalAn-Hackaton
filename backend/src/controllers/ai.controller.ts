@@ -6,7 +6,7 @@ import { notFound, pageMeta, paginate, param } from '../lib/http';
 import { logActivity } from '../lib/activity';
 import { dayRange, todayJkt, addDays, TIME_REGEX } from '../lib/time';
 import { getAgentConfig, invalidateAi, type AiFeature } from '../services/ai/context';
-import { DEFAULT_MODEL, FALLBACK_MODEL, FAST_MODEL, generateJson, isAiConfigured } from '../services/ai/gemini';
+import { DEFAULT_MODEL, FALLBACK_MODEL, FAST_MODEL, MODEL_POOL, generateJson, isAiConfigured, modelPoolStatus } from '../services/ai/gemini';
 import { runChatTurn } from '../services/ai/orchestrator';
 import { getCustomerAnalysis, getDashboardInsight } from '../services/ai/business';
 import { AuthRequest } from '../middlewares/authMiddleware';
@@ -39,7 +39,8 @@ export const aiStatus = async (req: AuthRequest, res: Response): Promise<any> =>
     success: true,
     data: {
       configured: isAiConfigured(),
-      models: { default: DEFAULT_MODEL, fast: FAST_MODEL, fallback: FALLBACK_MODEL },
+      models: { default: DEFAULT_MODEL, fast: FAST_MODEL, fallback: FALLBACK_MODEL, pool: MODEL_POOL },
+      pool: modelPoolStatus(),
       ping: pingResult,
     },
   });
@@ -117,7 +118,7 @@ export const upsertAgent = async (req: AuthRequest, res: Response): Promise<any>
 // =====================================================================
 
 const knowledgeSchema = z.object({
-  category: z.enum(['faq', 'aturan', 'harga', 'lokasi', 'game', 'lainnya']),
+  category: z.enum(['faq', 'aturan', 'harga', 'lokasi', 'game', 'kamus', 'lainnya']),
   question: z.string().nullable().optional(),
   content: z.string().min(3),
   isActive: z.boolean().default(true),

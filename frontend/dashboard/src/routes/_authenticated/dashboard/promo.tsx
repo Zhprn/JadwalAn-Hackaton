@@ -117,14 +117,14 @@ function PromoPage() {
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Sparkles className="w-16 h-16 text-indigo-400" />
           </div>
-          <h3 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-indigo-400" /> Rekomendasi AI
+          <h3 className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-slate-500" /> Rekomendasi AI
           </h3>
-          <p className="text-sm text-slate-100 mt-2 leading-relaxed">
+          <p className="text-sm text-slate-800 mt-2 leading-relaxed">
             {recommendation ? `"${recommendation}"` : insight.isLoading ? "Memuat insight…" : "Insight AI belum tersedia. Pastikan GEMINI_API_KEY terisi di backend."}
           </p>
           {recommendation && (

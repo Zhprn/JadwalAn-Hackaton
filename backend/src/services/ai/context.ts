@@ -105,7 +105,8 @@ const tokenize = (s: string) =>
 const getKnowledge = () =>
   cached('ai:knowledge', 60_000, () =>
     prisma.aiKnowledge.findMany({
-      where: { isActive: true },
+      // Kategori "kamus" khusus normalisasi typo (lihat normalize.ts), bukan sumber jawaban.
+      where: { isActive: true, category: { not: 'kamus' } },
       orderBy: [{ priority: 'desc' }, { updatedAt: 'desc' }],
       select: { category: true, question: true, content: true, priority: true },
     }),

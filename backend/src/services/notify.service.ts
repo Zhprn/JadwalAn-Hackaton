@@ -47,7 +47,7 @@ export const fmtBookingWa = (b: BookingForMsg, kind: 'confirmed' | 'reminder' | 
     case 'confirmed':
       return `✅ *Booking terkonfirmasi!*\n\n${detail}\n\nTunjukkan kode booking ke kasir saat datang ya kak. Sampai ketemu! 🙌`;
     case 'pending':
-      return `🕐 *Booking menunggu pembayaran*\n\n${detail}\n\nSelesaikan pembayaran QRIS di aplikasi sebelum batas waktu agar slot tidak dilepas.`;
+      return `🕐 *Booking menunggu pembayaran*\n\n${detail}\n\nSelesaikan pembayaran QRIS sebelum batas waktu agar slot tidak dilepas ya kak.`;
     case 'reminder':
       return `⏰ *Pengingat main*\n\nHai kak, jadwal mainmu sebentar lagi:\n\n${detail}\n\nDatang 10 menit lebih awal ya!`;
     case 'cancelled':
@@ -63,11 +63,18 @@ export const notifyBookingWa = async (bookingId: string, kind: 'confirmed' | 'ca
     if (!cfg.notifyBooking) return;
     const b = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { station: { select: { name: true } }, customer: { select: { whatsapp: true } }, chatSession: { select: { channel: true } } },
+      include: {
+        station: { select: { name: true } },
+        customer: { select: { whatsapp: true } },
+        chatSession: { select: { channel: true } },
+        payment: { select: { status: true } },
+      },
     });
     if (!b?.customer.whatsapp) return;
-    // Booking yang dibuat AI di chat WhatsApp sudah mendapat kartu konfirmasi di percakapan.
-    if (kind === 'confirmed' && b.source === 'ai' && b.chatSession?.channel === 'whatsapp') return;
+    // Booking AI di chat WhatsApp yang langsung terkonfirmasi (cash) sudah dapat kartu di percakapan.
+    // Tapi konfirmasi SETELAH bayar QRIS tetap dikirim supaya pelanggan tahu pembayarannya masuk.
+    const paidNow = b.payment?.status === 'paid';
+    if (kind === 'confirmed' && b.source === 'ai' && b.chatSession?.channel === 'whatsapp' && !paidNow) return;
     await outbound.whatsapp(b.customer.whatsapp, fmtBookingWa(b, kind));
   } catch (e) {
     console.error('[notify] gagal kirim WA booking:', (e as Error)?.message);

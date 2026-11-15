@@ -163,5 +163,7 @@ export interface ChatMessage {
     endTime: string;
     totalPrice: number;
     station: { name: string };
+    payment?: { status: string; method: string; amount: number; qrUrl: string | null; expiredAt: string | null } | null;
   } | null;
+  attachmentUrl?: string | null;
 }

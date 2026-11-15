@@ -199,12 +199,7 @@ function AgentForm({ agent }: { agent: AiAgent }) {
           <input className={inputCls} value={f.name} onChange={(e) => set("name", e.target.value)} />
         </Field>
         <Field label="Model Gemini" hint="Jika model tidak tersedia, backend otomatis pakai model cadangan.">
-          <input className={`${inputCls} font-mono`} value={f.model} onChange={(e) => set("model", e.target.value)} list="gemini-models" />
-          <datalist id="gemini-models">
-            <option value="gemini-3.5-flash-lite" />
-            <option value="gemini-3.8-flash" />
-            <option value="gemini-2.5-pro" />
-          </datalist>
+          <ModelSelect value={f.model} onChange={(v) => set("model", v)} />
         </Field>
         <Field label="Persona / system prompt" className="sm:col-span-2">
           <textarea className={textareaCls} rows={6} value={f.systemPrompt} onChange={(e) => set("systemPrompt", e.target.value)} />
@@ -306,7 +301,7 @@ function Row({ title, desc, children }: { title: string; desc: string; children:
 
 // ===================================================================== Knowledge
 
-const CATEGORIES = ["faq", "aturan", "harga", "lokasi", "game", "lainnya"];
+const CATEGORIES = ["faq", "aturan", "harga", "lokasi", "game", "kamus", "lainnya"];
 
 function KnowledgeTab() {
   const qc = useQueryClient();
@@ -413,11 +408,23 @@ function KnowledgeForm({ item, onClose }: { item: AiKnowledge | "new" | null; on
           <Field label="Prioritas (0–100)">
             <input type="number" min={0} max={100} className={inputCls} value={f.priority} onChange={(e) => setF({ ...f, priority: Number(e.target.value) })} />
           </Field>
-          <Field label="Pertanyaan / judul" className="col-span-2">
-            <input className={inputCls} value={f.question} onChange={(e) => setF({ ...f, question: e.target.value })} placeholder="Mis. Boleh bawa makanan?" />
+          <Field label={f.category === "kamus" ? "Kata typo / singkatan (pisahkan koma)" : "Pertanyaan / judul"} className="col-span-2">
+            <input
+              className={inputCls}
+              value={f.question}
+              onChange={(e) => setF({ ...f, question: e.target.value })}
+              placeholder={f.category === "kamus" ? "Mis. bkg, bking, boking" : "Mis. Boleh bawa makanan?"}
+            />
           </Field>
-          <Field label="Isi jawaban" className="col-span-2">
-            <textarea className={textareaCls} rows={5} value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} />
+          <Field label={f.category === "kamus" ? "Arti yang benar" : "Isi jawaban"} className="col-span-2">
+            <textarea
+              className={textareaCls}
+              rows={f.category === "kamus" ? 2 : 5}
+              value={f.content}
+              onChange={(e) => setF({ ...f, content: e.target.value })}
+              placeholder={f.category === "kamus" ? "Mis. booking" : undefined}
+            />
+            {f.category === "kamus" && <p className="text-[11px] text-slate-500 mt-1">AI akan memahami kata-kata di atas sebagai arti ini saat pelanggan chat.</p>}
           </Field>
         </div>
         <DialogFooter>
@@ -538,5 +545,54 @@ function StatBox({ label, value, sub, accent }: { label: string; value: ReactNod
       <p className={cn("text-2xl font-bold mt-2", accent ? "text-violet-600" : "text-slate-800")}>{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
     </Card>
+  );
+}
+
+const GEMINI_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-3-flash-preview",
+  "gemini-3.5-flash",
+  "gemini-3.6-flash",
+];
+const CUSTOM_MODEL = "__custom__";
+
+/** Dropdown model Gemini + opsi ketik manual untuk model lain. */
+function ModelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const known = GEMINI_MODELS.includes(value);
+  const [custom, setCustom] = useState(!known && !!value);
+  return (
+    <div className="space-y-2">
+      <select
+        className={`${inputCls} font-mono`}
+        value={custom ? CUSTOM_MODEL : value}
+        onChange={(e) => {
+          if (e.target.value === CUSTOM_MODEL) {
+            setCustom(true);
+          } else {
+            setCustom(false);
+            onChange(e.target.value);
+          }
+        }}
+      >
+        {!known && !custom && value && <option value={value}>{value}</option>}
+        {GEMINI_MODELS.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+        <option value={CUSTOM_MODEL}>Lainnya (ketik manual)…</option>
+      </select>
+      {custom && (
+        <input
+          className={`${inputCls} font-mono`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="mis. gemini-3.5-flash"
+          autoFocus
+        />
+      )}
+    </div>
   );
 }

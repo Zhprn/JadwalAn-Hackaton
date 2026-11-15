@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDashboardAiRouteImport } from './routes/_authenticated/dashboard/ai'
 import { Route as AuthenticatedDashboardBookingsRouteImport } from './routes/_authenticated/dashboard/bookings'
 import { Route as AuthenticatedDashboardCalenderRouteImport } from './routes/_authenticated/dashboard/calender'
+import { Route as AuthenticatedDashboardCopywriterRouteImport } from './routes/_authenticated/dashboard/copywriter'
 import { Route as AuthenticatedDashboardCostumerRouteImport } from './routes/_authenticated/dashboard/costumer'
 import { Route as AuthenticatedDashboardLivechatRouteImport } from './routes/_authenticated/dashboard/livechat'
 import { Route as AuthenticatedDashboardPromoRouteImport } from './routes/_authenticated/dashboard/promo'
@@ -59,6 +60,12 @@ const AuthenticatedDashboardCalenderRoute =
     path: '/dashboard/calender',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDashboardCopywriterRoute =
+  AuthenticatedDashboardCopywriterRouteImport.update({
+    id: '/dashboard/copywriter',
+    path: '/dashboard/copywriter',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardCostumerRoute =
   AuthenticatedDashboardCostumerRouteImport.update({
     id: '/dashboard/costumer',
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/ai': typeof AuthenticatedDashboardAiRoute
   '/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
+  '/dashboard/copywriter': typeof AuthenticatedDashboardCopywriterRoute
   '/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/dashboard/ai': typeof AuthenticatedDashboardAiRoute
   '/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
+  '/dashboard/copywriter': typeof AuthenticatedDashboardCopywriterRoute
   '/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/ai': typeof AuthenticatedDashboardAiRoute
   '/_authenticated/dashboard/bookings': typeof AuthenticatedDashboardBookingsRoute
   '/_authenticated/dashboard/calender': typeof AuthenticatedDashboardCalenderRoute
+  '/_authenticated/dashboard/copywriter': typeof AuthenticatedDashboardCopywriterRoute
   '/_authenticated/dashboard/costumer': typeof AuthenticatedDashboardCostumerRoute
   '/_authenticated/dashboard/livechat': typeof AuthenticatedDashboardLivechatRoute
   '/_authenticated/dashboard/promo': typeof AuthenticatedDashboardPromoRoute
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard/ai'
     | '/dashboard/bookings'
     | '/dashboard/calender'
+    | '/dashboard/copywriter'
     | '/dashboard/costumer'
     | '/dashboard/livechat'
     | '/dashboard/promo'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/dashboard/ai'
     | '/dashboard/bookings'
     | '/dashboard/calender'
+    | '/dashboard/copywriter'
     | '/dashboard/costumer'
     | '/dashboard/livechat'
     | '/dashboard/promo'
@@ -155,6 +167,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/ai'
     | '/_authenticated/dashboard/bookings'
     | '/_authenticated/dashboard/calender'
+    | '/_authenticated/dashboard/copywriter'
     | '/_authenticated/dashboard/costumer'
     | '/_authenticated/dashboard/livechat'
     | '/_authenticated/dashboard/promo'
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardCalenderRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/copywriter': {
+      id: '/_authenticated/dashboard/copywriter'
+      path: '/dashboard/copywriter'
+      fullPath: '/dashboard/copywriter'
+      preLoaderRoute: typeof AuthenticatedDashboardCopywriterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard/costumer': {
       id: '/_authenticated/dashboard/costumer'
       path: '/dashboard/costumer'
@@ -254,6 +274,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardAiRoute: typeof AuthenticatedDashboardAiRoute
   AuthenticatedDashboardBookingsRoute: typeof AuthenticatedDashboardBookingsRoute
   AuthenticatedDashboardCalenderRoute: typeof AuthenticatedDashboardCalenderRoute
+  AuthenticatedDashboardCopywriterRoute: typeof AuthenticatedDashboardCopywriterRoute
   AuthenticatedDashboardCostumerRoute: typeof AuthenticatedDashboardCostumerRoute
   AuthenticatedDashboardLivechatRoute: typeof AuthenticatedDashboardLivechatRoute
   AuthenticatedDashboardPromoRoute: typeof AuthenticatedDashboardPromoRoute
@@ -265,6 +286,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardAiRoute: AuthenticatedDashboardAiRoute,
   AuthenticatedDashboardBookingsRoute: AuthenticatedDashboardBookingsRoute,
   AuthenticatedDashboardCalenderRoute: AuthenticatedDashboardCalenderRoute,
+  AuthenticatedDashboardCopywriterRoute: AuthenticatedDashboardCopywriterRoute,
   AuthenticatedDashboardCostumerRoute: AuthenticatedDashboardCostumerRoute,
   AuthenticatedDashboardLivechatRoute: AuthenticatedDashboardLivechatRoute,
   AuthenticatedDashboardPromoRoute: AuthenticatedDashboardPromoRoute,

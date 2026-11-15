@@ -15,6 +15,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/bookings": "Daftar Booking",
   "/dashboard/promo": "Manajemen Promo",
   "/dashboard/costumer": "Customer Re-Engagement",
+  "/dashboard/copywriter": "Copywriter AI",
   "/dashboard/ai": "Pengaturan AI",
   "/dashboard/settings": "Pengaturan",
 };

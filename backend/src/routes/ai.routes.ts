@@ -15,6 +15,7 @@ import {
   dashboardInsight,
   customerInsight,
 } from '../controllers/ai.controller';
+import { posterCaption, posterHistory, posterUpload, regeneratePoster, removePosterCaption } from '../controllers/copywriter.controller';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware';
 import { aiRateLimiter } from '../middlewares/rateLimiter';
 
@@ -232,5 +233,57 @@ router.get('/stats', aiStats);
  */
 router.get('/insights/dashboard', aiRateLimiter, dashboardInsight);
 router.get('/insights/customers/:customerId', aiRateLimiter, customerInsight);
+
+/**
+ * @openapi
+ * /api/ai/copywriter/poster:
+ *   post:
+ *     summary: Analisis poster/flyer dan buat caption postingan (Gemini vision)
+ *     tags: [AI]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [image]
+ *             properties:
+ *               image: { type: string, format: binary, description: JPG/PNG/WebP maks 5 MB }
+ *               platform: { type: string, enum: [instagram, tiktok, facebook, whatsapp] }
+ *               tone: { type: string, enum: [friendly, hype, elegan, lucu] }
+ *               notes: { type: string, description: Catatan tambahan untuk AI }
+ *     responses:
+ *       201: { description: Analisis + 1 caption (langsung ke promo) }
+ * /api/ai/copywriter/history:
+ *   get:
+ *     summary: Riwayat caption poster
+ *     tags: [AI]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Daftar riwayat }
+ * /api/ai/copywriter/history/{id}/regenerate:
+ *   post:
+ *     summary: Buat ulang caption dari poster yang sama
+ *     tags: [AI]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     responses:
+ *       201: { description: Hasil baru }
+ * /api/ai/copywriter/history/{id}:
+ *   delete:
+ *     summary: Hapus riwayat caption
+ *     tags: [AI]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     responses:
+ *       200: { description: Terhapus }
+ */
+router.post('/copywriter/poster', aiRateLimiter, posterUpload, posterCaption);
+router.get('/copywriter/history', posterHistory);
+router.post('/copywriter/history/:id/regenerate', aiRateLimiter, regeneratePoster);
+router.delete('/copywriter/history/:id', removePosterCaption);
 
 export default router;
